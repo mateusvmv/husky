@@ -62,7 +62,7 @@ pub use {
 	wrappers::{batch::Batch, tree::Tree},
 };
 
-use database::Db;
+pub use database::Db;
 use wrappers::*;
 
 /// Opens a database at the given path
