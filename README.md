@@ -13,7 +13,9 @@ It is built around sled, and can use either rkyv or serde for serialization thro
 	- Mapping single values
 	- Chaining two trees of same type
 	- Zipping two trees of same key type
-	- Reducing values in the tree on insert
+- Make inserts easier by:
+  - Reducing values on insert
+  - Piping changes from one tree to another
 - Store those trees in the database, or load them into memory
 
 ## Examples
@@ -49,6 +51,4 @@ window.iter()
     assert_eq!(Some(k), v);
     assert_eq!(Some(k * 2), d);
   });
-
-// + Filter, Reduce, Chain and Transform
 ```

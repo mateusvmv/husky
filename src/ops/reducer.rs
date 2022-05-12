@@ -13,34 +13,34 @@ use crate::{
 	wrappers::database::Db,
 };
 
-type Reducer<P, M> = dyn Fn(Option<<P as View>::Value>, &M) -> <P as Change>::Insert + Send + Sync;
+type ReduceFn<P, M> = dyn Fn(Option<<P as View>::Value>, M) -> <P as Change>::Insert + Send + Sync;
 
 /// A struct that reduces values on insert.
-/// You can create a [Reduce] from a [Change] struct.
+/// You can create a [Reducer] from a [Change] struct.
 /// # Important
-/// If you perform an insert that bypasses the [Reduce] struct, be in on the tree or in another reduce, you may experience data races.
+/// If you perform an insert that bypasses the [Reducer] struct, be in on the tree or in another reduce, you may experience data races.
 ///
 /// # Examples
 /// ```
-/// use husky::{Tree, View, Change, Operate};
-/// let db = husky::open_temp().unwrap();
-/// let tree: Tree<String, String> = db.open_tree("tree").unwrap();
-/// let reduce = tree.reduce(|str, insert: &String| format!("{}, {}!", str.unwrap(), insert));
+/// # use husky::{Tree, View, Change, Operate};
+/// # let db = husky::open_temp().unwrap();
+/// # let tree: Tree<String, String> = db.open_tree("tree").unwrap();
+/// let reducer = tree.reducer(|str, insert: String| format!("{}, {}!", str.unwrap(), insert));
 ///
 /// tree.insert("key", "hello").unwrap();
-/// reduce.insert("key", "world").unwrap();
+/// reducer.insert("key", "world").unwrap();
 ///
-/// let result = reduce.get("key").unwrap();
+/// let result = reducer.get("key").unwrap();
 /// assert_eq!(result, Some("hello, world!".to_string()));
 /// ```
-pub struct Reduce<Previous, Merge>
+pub struct Reducer<Previous, Merge>
 where
 	Previous: View + Change,
 {
-	reducer: Arc<Reducer<Previous, Merge>>,
+	reducer: Arc<ReduceFn<Previous, Merge>>,
 	from: Previous,
 }
-impl<P: Clone + View + Change, M> Clone for Reduce<P, M> {
+impl<P: Clone + View + Change, M> Clone for Reducer<P, M> {
 	fn clone(&self) -> Self {
 		Self {
 			reducer: Arc::clone(&self.reducer),
@@ -49,22 +49,22 @@ impl<P: Clone + View + Change, M> Clone for Reduce<P, M> {
 	}
 }
 
-impl<P, Merge> Reduce<P, Merge>
+impl<P, Merge> Reducer<P, Merge>
 where
 	P: View + Change,
 {
-	pub(crate) fn new<Reducer>(from: P, reducer: Reducer) -> Self
+	pub(crate) fn new<ReduceFn>(from: P, reducer: ReduceFn) -> Self
 	where
-		Reducer:
-			'static + Fn(Option<<P as View>::Value>, &Merge) -> <P as Change>::Insert + Send + Sync,
+		ReduceFn:
+			'static + Fn(Option<<P as View>::Value>, Merge) -> <P as Change>::Insert + Send + Sync,
 		P: 'static + Sync + Send,
 	{
 		let reducer = Arc::new(reducer);
-		Reduce { from, reducer }
+		Reducer { from, reducer }
 	}
 }
 
-impl<Previous, Merge> View for Reduce<Previous, Merge>
+impl<Previous, Merge> View for Reducer<Previous, Merge>
 where
 	Previous: View + Change,
 	Merge: 'static + Clone + Send + Sync,
@@ -80,7 +80,7 @@ where
     }
   );
 }
-impl<Previous, Merge> Change for Reduce<Previous, Merge>
+impl<Previous, Merge> Change for Reducer<Previous, Merge>
 where
 	Previous: View + Change<Key = <Previous as View>::Key>,
 	Merge: 'static + Clone + Send + Sync,
@@ -88,14 +88,14 @@ where
 	type Key = <Previous as Change>::Key;
 	type Value = <Previous as Change>::Value;
 	type Insert = Merge;
-	fn insert_ref(
+	fn insert_owned(
 		&self,
-		key: &Self::Key,
-		value: &Self::Insert,
+		key: Self::Key,
+		value: Self::Insert,
 	) -> Result<Option<<Self as Change>::Value>> {
-		let v = self.from.get_ref(key)?;
+		let v = self.from.get_ref(&key)?;
 		let v = (self.reducer)(v, value);
-		self.from.insert_owned(key.clone(), v)
+		self.from.insert_owned(key, v)
 	}
   #[rustfmt::skip]
 	delegate! {
@@ -106,7 +106,7 @@ where
 	  }
 	}
 }
-impl<Previous, Merge> Watch for Reduce<Previous, Merge>
+impl<Previous, Merge> Watch for Reducer<Previous, Merge>
 where
 	Previous: Change + Watch,
 	Merge: 'static + Clone + Send + Sync,

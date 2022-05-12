@@ -38,8 +38,6 @@
 //!     assert_eq!(Some(k), v);
 //!     assert_eq!(Some(k * 2), d);
 //!   });
-//!
-//! // + Filter, Reduce, Chain and Transform
 //! ```
 
 use anyhow::Result;

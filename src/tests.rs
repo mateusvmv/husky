@@ -393,7 +393,7 @@ fn filter_map() {
 #[test]
 fn reduce() {
 	with_tree(|tree: Tree<u32, u32>| {
-		let reducer = tree.reduce(|a, b| a.unwrap_or(0) + b);
+		let reducer = tree.reducer(|a, b| a.unwrap_or(0) + b);
 		let stored = reducer
 			.store("stored_reduce")
 			.expect("Failed to store reduce");

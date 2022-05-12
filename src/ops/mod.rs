@@ -9,7 +9,7 @@ use crate::{
 };
 
 use self::{
-	chain::Chain, filter::Filter, filter_map::FilterMap, index::Index, map::Map, reduce::Reduce,
+	chain::Chain, filter::Filter, filter_map::FilterMap, index::Index, map::Map, reducer::Reducer,
 	transform::Transform, zip::Zip,
 };
 
@@ -24,7 +24,7 @@ pub mod index;
 /// [Map] struct declaration and implementations.
 pub mod map;
 /// [Reduce] struct declaration and implementations.
-pub mod reduce;
+pub mod reducer;
 /// [Transform] struct declaration and implementations.
 pub mod transform;
 /// [Zip] struct declaration and implementations.
@@ -102,16 +102,16 @@ where
 	{
 		FilterMap::new(self.clone(), mapper)
 	}
-	/// Reduces inserts to a tree. Please refer to [Reduce]
-	fn reduce<Reducer, Merge>(&self, reducer: Reducer) -> Reduce<Self, Merge>
+	/// Reduces inserts to a tree. Please refer to [Reducer]
+	fn reducer<ReduceFn, Merge>(&self, reducer: ReduceFn) -> Reducer<Self, Merge>
 	where
 		Self: Change,
-		Reducer: 'static
+		ReduceFn: 'static
 			+ Fn(Option<<Self as View>::Value>, &Merge) -> <Self as Change>::Insert
 			+ Sync
 			+ Send,
 	{
-		Reduce::new(self.clone(), reducer)
+		Reducer::new(self.clone(), reducer)
 	}
 	/// Pipes changes to another tree.
 	fn pipe<O>(&self, other: O)
