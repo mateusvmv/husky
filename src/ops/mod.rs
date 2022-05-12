@@ -10,7 +10,7 @@ use crate::{
 
 use self::{
 	chain::Chain, filter::Filter, filter_map::FilterMap, index::Index, map::Map, reducer::Reducer,
-	transform::Transform, zip::Zip,
+	transform::Transform, zip::Zip, inserter::Inserter
 };
 
 /// [Chain] struct declaration and implementations.
@@ -23,12 +23,14 @@ pub mod filter_map;
 pub mod index;
 /// [Map] struct declaration and implementations.
 pub mod map;
-/// [Reduce] struct declaration and implementations.
+/// [Reducer] struct declaration and implementations.
 pub mod reducer;
 /// [Transform] struct declaration and implementations.
 pub mod transform;
 /// [Zip] struct declaration and implementations.
 pub mod zip;
+/// [Inserter] struct declaration and implementations.
+pub mod inserter;
 
 /// A trait that allows you to operate trees.
 pub trait Operate
@@ -107,11 +109,22 @@ where
 	where
 		Self: Change,
 		ReduceFn: 'static
-			+ Fn(Option<<Self as View>::Value>, &Merge) -> <Self as Change>::Insert
+			+ Fn(Option<<Self as View>::Value>, Merge) -> <Self as Change>::Insert
 			+ Sync
 			+ Send,
 	{
 		Reducer::new(self.clone(), reducer)
+	}
+	/// Parses inserts to a tree. Please refer to [Reducer]
+	fn inserter<InsertFn, Insert>(&self, reducer: InsertFn) -> Inserter<Self, Insert>
+	where
+		Self: Change,
+		InsertFn: 'static
+			+ Fn(Insert) -> <Self as Change>::Insert
+			+ Sync
+			+ Send,
+	{
+		Inserter::new(self.clone(), reducer)
 	}
 	/// Pipes changes to another tree.
 	fn pipe<O>(&self, other: O)

@@ -15,6 +15,7 @@ It is built around sled, and can use either rkyv or serde for serialization thro
 	- Zipping two trees of same key type
 - Make inserts easier by:
   - Reducing values on insert
+  - Parsing values on insert
   - Piping changes from one tree to another
 - Store those trees in the database, or load them into memory
 
