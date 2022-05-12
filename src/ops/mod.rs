@@ -10,7 +10,7 @@ use crate::{
 
 use self::{
 	chain::Chain, filter::Filter, filter_map::FilterMap, index::Index, map::Map, reducer::Reducer,
-	transform::Transform, zip::Zip, inserter::Inserter
+	transform::Transform, zip::Zip, inserter::Inserter, filter_reducer::FilterReducer, filter_inserter::FilterInserter
 };
 
 /// [Chain] struct declaration and implementations.
@@ -31,6 +31,10 @@ pub mod transform;
 pub mod zip;
 /// [Inserter] struct declaration and implementations.
 pub mod inserter;
+/// [FilterReducer] struct declaration and implementations.
+pub mod filter_reducer;
+/// [FilterInserter] struct declaration and implementations.
+pub mod filter_inserter;
 
 /// A trait that allows you to operate trees.
 pub trait Operate
@@ -104,6 +108,17 @@ where
 	{
 		FilterMap::new(self.clone(), mapper)
 	}
+	/// Reduces and filters inserts to a tree. Please refer to [FilterReducer]
+	fn filter_reducer<ReduceFn, Merge>(&self, reducer: ReduceFn) -> FilterReducer<Self, Merge>
+	where
+		Self: Change,
+		ReduceFn: 'static
+			+ Fn(Option<<Self as View>::Value>, Merge) -> Option<<Self as Change>::Insert>
+			+ Sync
+			+ Send,
+	{
+		FilterReducer::new(self.clone(), reducer)
+	}
 	/// Reduces inserts to a tree. Please refer to [Reducer]
 	fn reducer<ReduceFn, Merge>(&self, reducer: ReduceFn) -> Reducer<Self, Merge>
 	where
@@ -115,8 +130,19 @@ where
 	{
 		Reducer::new(self.clone(), reducer)
 	}
-	/// Parses inserts to a tree. Please refer to [Reducer]
-	fn inserter<InsertFn, Insert>(&self, reducer: InsertFn) -> Inserter<Self, Insert>
+	/// Parses inserts to a tree. Please refer to [FilterInserter]
+	fn filter_inserter<InsertFn, Insert>(&self, inserter: InsertFn) -> FilterInserter<Self, Insert>
+	where
+		Self: Change,
+		InsertFn: 'static
+			+ Fn(Insert) -> Option<<Self as Change>::Insert>
+			+ Sync
+			+ Send,
+	{
+		FilterInserter::new(self.clone(), inserter)
+	}
+	/// Parses inserts to a tree. Please refer to [Inserter]
+	fn inserter<InsertFn, Insert>(&self, inserter: InsertFn) -> Inserter<Self, Insert>
 	where
 		Self: Change,
 		InsertFn: 'static
@@ -124,7 +150,7 @@ where
 			+ Sync
 			+ Send,
 	{
-		Inserter::new(self.clone(), reducer)
+		Inserter::new(self.clone(), inserter)
 	}
 	/// Pipes changes to another tree.
 	fn pipe<O>(&self, other: O)
