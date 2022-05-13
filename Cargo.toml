@@ -2,10 +2,10 @@
 name = "husky"
 authors = ["Mateus Vitor <mateusv251@gmail.com>"]
 description = "Library for creating databases like iterators"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
-keywords = ["database", "embedded", "multi-value"]
+keywords = ["database", "embedded", "key-value"]
 
 [dependencies]
 sled = "0.34.7"
