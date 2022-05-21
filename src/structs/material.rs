@@ -18,6 +18,7 @@ use crate::traits::{
 	watch::{Event, Watch},
 };
 
+/// A view that is stored in the database
 pub struct Material<From, Inner>
 where
 	From: View + Watch,
@@ -66,6 +67,7 @@ where
 		);
 		Self { from, inner, sync }
 	}
+  /// Rebuilds the tree from its source view
 	pub fn rebuild(&self) -> Result<()> {
 		self.inner.clear()?;
 		for res in self.from.iter() {
