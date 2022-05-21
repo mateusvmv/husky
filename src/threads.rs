@@ -1,8 +1,8 @@
+use parking_lot::{
+  Mutex, RwLock,
+};
 use std::{
-	sync::{
-		atomic::{AtomicU32, Ordering::Relaxed},
-		Arc, Mutex, RwLock,
-	},
+  sync::{Arc, atomic::{AtomicU32, Ordering::Relaxed}},
 	thread::Thread,
 };
 
@@ -57,7 +57,7 @@ pub fn spawn_watcher<K, V, E, F>(
 					let sent = events.len();
 					synchronizer.outgoing(sent as u32);
 					for event in events {
-						let mut bus = bus.write().unwrap();
+						let mut bus = bus.write();
 						bus.broadcast(event);
 					}
 				}
@@ -90,7 +90,7 @@ impl Synchronizer {
 		}
 	}
 	pub(crate) fn push_source(&self, source: Arc<Synchronizer>) {
-		self.source.write().unwrap().push(source);
+		self.source.write().push(source);
 	}
 	pub(crate) fn reset(&self) {
 		let received = self.incoming();
@@ -99,7 +99,6 @@ impl Synchronizer {
 	fn incoming(&self) -> u32 {
 		self.source
 			.read()
-			.unwrap()
 			.iter()
 			.map(|i| i.outgoing.load(Relaxed))
 			.sum()
@@ -107,14 +106,14 @@ impl Synchronizer {
 	fn is_sync(&self) -> bool {
 		let received = self.received.load(Relaxed);
 		let incoming = self.incoming();
-		let source_is_sync = self.source.read().unwrap().iter().all(|s| s.is_sync());
+		let source_is_sync = self.source.read().iter().all(|s| s.is_sync());
 		let self_is_sync = received == incoming;
 		source_is_sync && self_is_sync
 	}
 	pub(crate) fn received(&self) {
 		self.received.fetch_add(1, Relaxed);
 		if self.is_sync() {
-			let mut waiting = self.waiting.lock().unwrap();
+			let mut waiting = self.waiting.lock();
 			for thread in waiting.drain(..) {
 				thread.unpark();
 			}
@@ -128,7 +127,7 @@ impl Synchronizer {
 			if self.is_sync() {
 				break;
 			}
-			let mut waiting = self.waiting.lock().unwrap();
+			let mut waiting = self.waiting.lock();
 			waiting.push(std::thread::current());
 			drop(waiting);
 			std::thread::park();

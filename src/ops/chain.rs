@@ -3,8 +3,9 @@ use bus::{Bus, BusReader};
 use std::{
 	cmp::Ordering,
 	hash::Hash,
-	sync::{Arc, RwLock},
+	sync::Arc,
 };
+use parking_lot::RwLock;
 
 use crate::{
 	macros::cloned,

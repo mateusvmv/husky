@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use parking_lot::RwLock;
 
 use anyhow::Result;
 
@@ -41,7 +42,7 @@ where
 	type Value = V;
 	type Iter = Box<dyn Iterator<Item = Result<(K, V)>>>;
 	fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>> {
-		let map = self.inner.read().unwrap();
+		let map = self.inner.read();
 		let value = map.get(key).cloned();
 		Ok(value)
 	}
@@ -49,7 +50,6 @@ where
 		Box::new(
 			self.inner
 				.read()
-				.unwrap()
 				.iter()
 				.map(|(k, v)| Ok((k.clone(), v.clone())))
 				.collect::<Vec<_>>()
@@ -57,36 +57,35 @@ where
 		)
 	}
 	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
-		Ok(self.inner.read().unwrap().contains_key(key))
+		Ok(self.inner.read().contains_key(key))
 	}
 	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
-		let map = self.inner.read().unwrap();
+		let map = self.inner.read();
 		let value = map.range(..key).next_back();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
-		let map = self.inner.read().unwrap();
+		let map = self.inner.read();
 		let value = map.range(key..).next();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>> {
-		let map = self.inner.read().unwrap();
+		let map = self.inner.read();
 		let value = map.range(..).next();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>> {
-		let map = self.inner.read().unwrap();
+		let map = self.inner.read();
 		let value = map.range(..).next_back();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn is_empty(&self) -> bool {
-		self.inner.read().unwrap().is_empty()
+		self.inner.read().is_empty()
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		Ok(Box::new(
 			Arc::clone(&self.inner)
 				.read()
-				.unwrap()
 				.range(range)
 				.map(|(k, v)| Ok((k.clone(), v.clone())))
 				.collect::<Vec<_>>()
@@ -106,17 +105,17 @@ where
 	type Value = V;
 	type Insert = V;
 	fn insert_owned(&self, key: K, value: V) -> Result<Option<<Self as Change>::Value>> {
-		let mut map = self.inner.write().unwrap();
+		let mut map = self.inner.write();
 		let prev = BTreeMap::insert(&mut map, key, value);
 		Ok(prev)
 	}
 	fn remove_ref(&self, key: &<Self as Change>::Key) -> Result<Option<<Self as Change>::Value>> {
-		let mut map = self.inner.write().unwrap();
+		let mut map = self.inner.write();
 		let prev = BTreeMap::remove(&mut map, key);
 		Ok(prev)
 	}
 	fn clear(&self) -> Result<()> {
-		let mut map = self.inner.write().unwrap();
+		let mut map = self.inner.write();
 		BTreeMap::clear(&mut map);
 		Ok(())
 	}

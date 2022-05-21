@@ -4,8 +4,9 @@ use delegate::delegate;
 use sled::IVec;
 use std::{
 	ops::{Bound, RangeBounds},
-	sync::{Arc, RwLock},
+	sync::Arc,
 };
+use parking_lot::RwLock;
 
 use crate::{
 	batch::Batch,

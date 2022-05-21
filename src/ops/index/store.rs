@@ -4,8 +4,9 @@ use delegate::delegate;
 use std::{
 	collections::HashMap,
 	hash::Hash,
-	sync::{Arc, RwLock},
+	sync::Arc,
 };
+use parking_lot::RwLock;
 
 use crate::{
 	macros::{cloned, hash, unwrap_or_return},

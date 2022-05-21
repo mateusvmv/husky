@@ -1,5 +1,6 @@
 use bus::{Bus, BusReader};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
+use parking_lot::{RwLock, Mutex};
 
 use crate::{threads::Synchronizer, wrappers::database::Db};
 
@@ -68,24 +69,22 @@ impl<K, V> Watcher<K, V> {
 		let init = Arc::default();
 		let bus = Arc::default();
 		let s = Self { bus, init };
-		*s.init.lock().unwrap() = Some(b);
+		*s.init.lock() = Some(b);
 		s
 	}
 	pub fn new_reader(&self) -> BusReader<Event<K, V>> {
 		self.bus
 			.lock()
-			.unwrap()
 			.get_or_insert_with(|| {
-				let init = self.init.lock().unwrap().take().unwrap();
+				let init = self.init.lock().take().unwrap();
 				init()
 			})
 			.write()
-			.unwrap()
 			.add_rx()
 	}
 	pub fn send(&self, event: Event<K, V>) {
-		if let Some(bus) = &*self.bus.lock().unwrap() {
-			let mut bus = bus.write().unwrap();
+		if let Some(bus) = &*self.bus.lock() {
+			let mut bus = bus.write();
 			bus.broadcast(event);
 		};
 	}
