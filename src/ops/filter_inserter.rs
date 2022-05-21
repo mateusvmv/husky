@@ -26,12 +26,12 @@ type InsertFn<P, M> = dyn Fn(M) -> Option<<P as Change>::Insert> + Send + Sync;
 /// let inserter = tree.filter_inserter(|insert: i32| if insert < 10 { Some(insert) } else { None });
 ///
 /// tree.insert("key", 9).unwrap();
-/// 
+///
 /// let result = tree.get("key").unwrap();
 /// assert_eq!(result, Some(9));
-/// 
+///
 /// inserter.insert("key", 11).unwrap();
-/// 
+///
 /// let result = tree.get("key").unwrap();
 /// assert_eq!(result, None);
 /// ```
@@ -57,8 +57,7 @@ where
 {
 	pub(crate) fn new<ReduceFn>(from: P, inserter: ReduceFn) -> Self
 	where
-		ReduceFn:
-			'static + Fn(Insert) -> Option<<P as Change>::Insert> + Send + Sync,
+		ReduceFn: 'static + Fn(Insert) -> Option<<P as Change>::Insert> + Send + Sync,
 		P: 'static + Sync + Send,
 	{
 		let inserter = Arc::new(inserter);
@@ -79,6 +78,21 @@ where
     to self.from {
       fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>>;
       fn iter(&self) -> Self::Iter;
+      fn contains_key_ref(&self, key: &Self::Key) -> Result<bool>;
+      fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn is_empty(&self) -> bool;
+      fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter>;
     }
   );
 }
@@ -96,10 +110,10 @@ where
 		value: Self::Insert,
 	) -> Result<Option<<Self as Change>::Value>> {
 		let v = (self.inserter)(value);
-    match v {
-      Some(v) => self.from.insert_owned(key, v),
-      None => self.from.remove_owned(key)
-    }
+		match v {
+			Some(v) => self.from.insert_owned(key, v),
+			None => self.from.remove_owned(key),
+		}
 	}
   #[rustfmt::skip]
 	delegate! {

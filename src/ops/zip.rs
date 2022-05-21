@@ -1,6 +1,7 @@
 use anyhow::Result;
 use bus::{Bus, BusReader};
 use std::{
+	cmp::Ordering,
 	collections::HashMap,
 	hash::Hash,
 	sync::{Arc, RwLock},
@@ -147,13 +148,143 @@ where
 		});
 		Box::new(map.into_iter().map(|(k, v)| Ok((k, v))))
 	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		Ok(self.a.contains_key_ref(key)? || self.b.contains_key_ref(key)?)
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let a = self.a.get_lt_ref(key)?;
+		let b = self.b.get_lt_ref(key)?;
+		match (a, b) {
+			(None, None) => Ok(None),
+			(Some(a), None) => {
+				let (k, a) = a;
+				Ok(Some((k, (Some(a), None))))
+			}
+			(None, Some(b)) => {
+				let (k, b) = b;
+				Ok(Some((k, (None, Some(b)))))
+			}
+			(Some(a), Some(b)) => {
+				let (ka, a) = a;
+				let (kb, b) = b;
+				match ka.cmp(&kb) {
+					Ordering::Less => Ok(Some((kb, (None, Some(b))))),
+					Ordering::Equal => Ok(Some((ka, (Some(a), Some(b))))),
+					Ordering::Greater => Ok(Some((ka, (Some(a), None)))),
+				}
+			}
+		}
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let a = self.a.get_gt_ref(key)?;
+		let b = self.b.get_gt_ref(key)?;
+		match (a, b) {
+			(None, None) => Ok(None),
+			(Some(a), None) => {
+				let (k, a) = a;
+				Ok(Some((k, (Some(a), None))))
+			}
+			(None, Some(b)) => {
+				let (k, b) = b;
+				Ok(Some((k, (None, Some(b)))))
+			}
+			(Some(a), Some(b)) => {
+				let (ka, a) = a;
+				let (kb, b) = b;
+				match ka.cmp(&kb) {
+					Ordering::Less => Ok(Some((ka, (Some(a), None)))),
+					Ordering::Equal => Ok(Some((ka, (Some(a), Some(b))))),
+					Ordering::Greater => Ok(Some((kb, (None, Some(b))))),
+				}
+			}
+		}
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let a = self.a.first()?;
+		let b = self.b.first()?;
+		match (a, b) {
+			(None, None) => Ok(None),
+			(None, Some(b)) => {
+				let (k, b) = b;
+				Ok(Some((k, (None, Some(b)))))
+			}
+			(Some(a), None) => {
+				let (k, a) = a;
+				Ok(Some((k, (Some(a), None))))
+			}
+			(Some(a), Some(b)) => {
+				let (ka, a) = a;
+				let (kb, b) = b;
+				match ka.cmp(&kb) {
+					Ordering::Less => Ok(Some((ka, (Some(a), None)))),
+					Ordering::Equal => Ok(Some((ka, (Some(a), Some(b))))),
+					Ordering::Greater => Ok(Some((kb, (None, Some(b))))),
+				}
+			}
+		}
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let a = self.a.last()?;
+		let b = self.b.last()?;
+		match (a, b) {
+			(None, None) => Ok(None),
+			(None, Some(b)) => {
+				let (k, b) = b;
+				Ok(Some((k, (None, Some(b)))))
+			}
+			(Some(a), None) => {
+				let (k, a) = a;
+				Ok(Some((k, (Some(a), None))))
+			}
+			(Some(a), Some(b)) => {
+				let (ka, a) = a;
+				let (kb, b) = b;
+				match ka.cmp(&kb) {
+					Ordering::Less => Ok(Some((kb, (None, Some(b))))),
+					Ordering::Equal => Ok(Some((ka, (Some(a), Some(b))))),
+					Ordering::Greater => Ok(Some((ka, (Some(a), None)))),
+				}
+			}
+		}
+	}
+	fn is_empty(&self) -> bool {
+		self.a.is_empty() && self.b.is_empty()
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		let a = (range.start_bound(), range.end_bound());
+		let b = (range.start_bound(), range.end_bound());
+		let a = self.a.range(a)?;
+		let b = self.b.range(b)?;
+		let mut map = HashMap::new();
+		a.into_iter().flatten().for_each(|(k, v)| {
+			let e = map.entry(k).or_insert((None, None));
+			e.0 = Some(v);
+		});
+		b.into_iter().flatten().for_each(|(k, v)| {
+			let e = map.entry(k).or_insert((None, None));
+			e.1 = Some(v);
+		});
+		Ok(Box::new(map.into_iter().map(Ok)))
+	}
 }
 
 impl<A, B> Watch for Zip<A, B>
 where
 	A: View + Watch,
 	B: View<Key = A::Key> + Watch,
-	<A as View>::Key: Hash + Eq,
+	<A as View>::Key: Hash + Eq + Ord,
 {
 	fn watch(&self) -> BusReader<Event<Self::Key, Self::Value>> {
 		self.watcher.new_reader()

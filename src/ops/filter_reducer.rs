@@ -13,7 +13,8 @@ use crate::{
 	wrappers::database::Db,
 };
 
-type ReduceFn<P, M> = dyn Fn(Option<<P as View>::Value>, M) -> Option<<P as Change>::Insert> + Send + Sync;
+type ReduceFn<P, M> =
+	dyn Fn(Option<<P as View>::Value>, M) -> Option<<P as Change>::Insert> + Send + Sync;
 
 /// A struct that reduces values on insert.
 /// You can create a [Reducer] from a [Change] struct.
@@ -39,9 +40,9 @@ type ReduceFn<P, M> = dyn Fn(Option<<P as View>::Value>, M) -> Option<<P as Chan
 ///
 /// let result = tree.get("key").unwrap();
 /// assert_eq!(result, Some(5));
-/// 
+///
 /// reducer.insert("key", 5).unwrap();
-/// 
+///
 /// let result = tree.get("key").unwrap();
 /// assert_eq!(result, None);
 /// ```
@@ -67,8 +68,10 @@ where
 {
 	pub(crate) fn new<ReduceFn>(from: P, reducer: ReduceFn) -> Self
 	where
-		ReduceFn:
-			'static + Fn(Option<<P as View>::Value>, Merge) -> Option<<P as Change>::Insert> + Send + Sync,
+		ReduceFn: 'static
+			+ Fn(Option<<P as View>::Value>, Merge) -> Option<<P as Change>::Insert>
+			+ Send
+			+ Sync,
 		P: 'static + Sync + Send,
 	{
 		let reducer = Arc::new(reducer);
@@ -89,6 +92,21 @@ where
     to self.from {
       fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>>;
       fn iter(&self) -> Self::Iter;
+      fn contains_key_ref(&self, key: &Self::Key) -> Result<bool>;
+      fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn is_empty(&self) -> bool;
+      fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter>;
     }
   );
 }
@@ -107,10 +125,10 @@ where
 	) -> Result<Option<<Self as Change>::Value>> {
 		let v = self.from.get_ref(&key)?;
 		let v = (self.reducer)(v, value);
-    match v {
-      Some(v) => self.from.insert_owned(key, v),
-      None => self.from.remove_owned(key)
-    }
+		match v {
+			Some(v) => self.from.insert_owned(key, v),
+			None => self.from.remove_owned(key),
+		}
 	}
   #[rustfmt::skip]
 	delegate! {

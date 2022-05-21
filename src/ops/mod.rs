@@ -9,18 +9,25 @@ use crate::{
 };
 
 use self::{
-	chain::Chain, filter::Filter, filter_map::FilterMap, index::Index, map::Map, reducer::Reducer,
-	transform::Transform, zip::Zip, inserter::Inserter, filter_reducer::FilterReducer, filter_inserter::FilterInserter
+	chain::Chain, filter::Filter, filter_inserter::FilterInserter, filter_map::FilterMap,
+	filter_reducer::FilterReducer, index::Index, inserter::Inserter, map::Map, reducer::Reducer,
+	transform::Transform, zip::Zip,
 };
 
 /// [Chain] struct declaration and implementations.
 pub mod chain;
 /// [Filter] struct declaration and implementations.
 pub mod filter;
+/// [FilterInserter] struct declaration and implementations.
+pub mod filter_inserter;
 /// [FilterMap] struct declaration and implementations.
 pub mod filter_map;
+/// [FilterReducer] struct declaration and implementations.
+pub mod filter_reducer;
 /// [Index] struct declaration and implementations.
 pub mod index;
+/// [Inserter] struct declaration and implementations.
+pub mod inserter;
 /// [Map] struct declaration and implementations.
 pub mod map;
 /// [Reducer] struct declaration and implementations.
@@ -29,12 +36,6 @@ pub mod reducer;
 pub mod transform;
 /// [Zip] struct declaration and implementations.
 pub mod zip;
-/// [Inserter] struct declaration and implementations.
-pub mod inserter;
-/// [FilterReducer] struct declaration and implementations.
-pub mod filter_reducer;
-/// [FilterInserter] struct declaration and implementations.
-pub mod filter_inserter;
 
 /// A trait that allows you to operate trees.
 pub trait Operate
@@ -134,10 +135,7 @@ where
 	fn filter_inserter<InsertFn, Insert>(&self, inserter: InsertFn) -> FilterInserter<Self, Insert>
 	where
 		Self: Change,
-		InsertFn: 'static
-			+ Fn(Insert) -> Option<<Self as Change>::Insert>
-			+ Sync
-			+ Send,
+		InsertFn: 'static + Fn(Insert) -> Option<<Self as Change>::Insert> + Sync + Send,
 	{
 		FilterInserter::new(self.clone(), inserter)
 	}
@@ -145,10 +143,7 @@ where
 	fn inserter<InsertFn, Insert>(&self, inserter: InsertFn) -> Inserter<Self, Insert>
 	where
 		Self: Change,
-		InsertFn: 'static
-			+ Fn(Insert) -> <Self as Change>::Insert
-			+ Sync
-			+ Send,
+		InsertFn: 'static + Fn(Insert) -> <Self as Change>::Insert + Sync + Send,
 	{
 		Inserter::new(self.clone(), inserter)
 	}

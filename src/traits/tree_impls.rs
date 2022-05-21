@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bus::BusReader;
 use delegate::delegate;
-use std::sync::Arc;
+use std::{ops::RangeBounds, sync::Arc};
 
 use crate::{
 	traits::{
@@ -9,7 +9,10 @@ use crate::{
 		view::View,
 		watch::{Event, Watch},
 	},
-	wrappers::{database::Db, tree::Tree},
+	wrappers::{
+		database::Db,
+		tree::{self, Tree},
+	},
 };
 
 use super::serial::Serial;
@@ -21,15 +24,21 @@ where
 {
 	type Key = Key;
 	type Value = Value;
-	type Iter = Box<dyn Iterator<Item = Result<(Self::Key, Self::Value)>>>;
-	fn iter(&self) -> Self::Iter {
-		Box::new(self.iter())
-	}
+	type Iter = tree::Iter<Key, Value>;
+  #[rustfmt::skip]
 	delegate! {
-	  to self {
-		fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>>;
+    to self {
+      fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>>;
+      fn contains_key_ref(&self, key: &Self::Key) -> Result<bool>;
+      fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>;
+      fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>;
+      fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>;
+      fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>;
+      fn range(&self, range: impl RangeBounds<Self::Key>) -> Result<Self::Iter>;
+      fn iter(&self) -> Self::Iter;
+      fn is_empty(&self) -> bool;
 	  }
-	}
+  }
 }
 
 impl<Key, Value> Watch for Tree<Key, Value>

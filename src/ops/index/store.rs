@@ -183,6 +183,19 @@ where
 	}
 }
 
+macro_rules! values_from_keys {
+	($s:expr, $k:expr) => {{
+		let mut values = Vec::with_capacity($k.len());
+		for i in $k {
+			let value = $s.get_ref(&i)?;
+			if let Some(value) = value {
+				values.push(value);
+			}
+		}
+		values
+	}};
+}
+
 impl<P, I, F, B> View for MaterialIndex<P, I, F, B>
 where
 	P: View,
@@ -196,15 +209,9 @@ where
 	fn get_ref(&self, key: &I) -> Result<Option<Vec<P::Value>>> {
 		self.sync.wait();
 		let v = self.fwd.get_ref(key)?;
-		let keys = unwrap_or_return!(v);
+		let keys = unwrap_or_return!(v).into_vec();
 		let source = &self.from.from;
-		let mut values = Vec::with_capacity(keys.len());
-		for i in keys.into_vec() {
-			let value = source.get_ref(&i)?;
-			if let Some(value) = value {
-				values.push(value);
-			}
-		}
+		let values = values_from_keys!(source, keys);
 		if values.is_empty() {
 			Ok(None)
 		} else {
@@ -214,19 +221,93 @@ where
 	fn iter(&self) -> Self::Iter {
 		let source = self.from.from.clone();
 		let iter = self.fwd.iter();
-		Box::new(iter
-			.map(move |r| {
-				r.map(|(k, v)| {
-					let v = v
-						.into_vec()
-						.into_iter()
-						.flat_map(|k| source.get_ref(&k))
-						.flatten()
-						.collect::<Vec<_>>();
-					(k, v)
-				})
-			})
-    )
+		Box::new(iter.map(move |r| {
+			let (i, k) = r?;
+			let k = k.into_vec();
+			let mut v = Vec::with_capacity(k.len());
+			for k in k {
+				let value = source.get_ref(&k)?;
+				if let Some(value) = value {
+					v.push(value);
+				}
+			}
+			Ok((i, v))
+		}))
+	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		self.sync.wait();
+		self.fwd.contains_key_ref(key)
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.get_lt_ref(key)?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		let v = v
+			.into_vec()
+			.into_iter()
+			.flat_map(|k| self.from.from.get_ref(&k))
+			.flatten()
+			.collect::<Vec<_>>();
+		Ok(Some((k, v)))
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.get_gt_ref(key)?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		let v = v.into_vec();
+		let v = values_from_keys!(self.from.from, v);
+		Ok(Some((k, v)))
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.first()?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		let v = v.into_vec();
+		let v = values_from_keys!(self.from.from, v);
+		Ok(Some((k, v)))
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.last()?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		let v = v.into_vec();
+		let v = values_from_keys!(self.from.from, v);
+		Ok(Some((k, v)))
+	}
+	fn is_empty(&self) -> bool {
+		self.from.from.is_empty()
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		let source = self.from.from.clone();
+		let iter = self.fwd.range(range)?;
+		Ok(Box::new(iter.map(move |r| {
+			let (i, k) = r?;
+			let k = k.into_vec();
+			let mut v = Vec::with_capacity(k.len());
+			for k in k {
+				let value = source.get_ref(&k)?;
+				if let Some(value) = value {
+					v.push(value);
+				}
+			}
+			Ok((i, v))
+		})))
 	}
 }
 impl<P, I, F, B> Change for MaterialIndex<P, I, F, B>

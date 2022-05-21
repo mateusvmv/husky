@@ -77,6 +77,21 @@ where
     to self.from {
       fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>>;
       fn iter(&self) -> Self::Iter;
+      fn contains_key_ref(&self, key: &Self::Key) -> Result<bool>;
+      fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+      where
+        Self::Key: Ord;
+      fn is_empty(&self) -> bool;
+      fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter>;
     }
   );
 }

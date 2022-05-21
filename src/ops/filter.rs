@@ -123,6 +123,81 @@ where
 				.map(Ok),
 		)
 	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		let c = self.from.contains_key_ref(key)?;
+		if !c {
+			return Ok(false);
+		};
+		let v = self.from.get_ref(key)?;
+		let v = if let Some(v) = v { v } else { return Ok(false) };
+		let filter = (self.filter)(key, &v);
+		Ok(filter)
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.get_lt_ref(key)?;
+		let v = if let Some(v) = v { v } else { return Ok(None) };
+		let filter = (self.filter)(&v.0, &v.1);
+		if filter {
+			Ok(Some(v))
+		} else {
+			Ok(None)
+		}
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.get_gt_ref(key)?;
+		let v = if let Some(v) = v { v } else { return Ok(None) };
+		let filter = (self.filter)(&v.0, &v.1);
+		if filter {
+			Ok(Some(v))
+		} else {
+			Ok(None)
+		}
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.first()?;
+		let v = if let Some(v) = v { v } else { return Ok(None) };
+		let filter = (self.filter)(&v.0, &v.1);
+		if filter {
+			Ok(Some(v))
+		} else {
+			Ok(None)
+		}
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.last()?;
+		let v = if let Some(v) = v { v } else { return Ok(None) };
+		let filter = (self.filter)(&v.0, &v.1);
+		if filter {
+			Ok(Some(v))
+		} else {
+			Ok(None)
+		}
+	}
+  /// Calling is_empty on a filter will load an iterator
+	fn is_empty(&self) -> bool {
+		let e = self.from.is_empty();
+    if e { return true };
+		self.iter().size_hint().0 == 0
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		let filter = Arc::clone(&self.filter);
+		let iter = self.from.range(range)?;
+		Ok(Box::new(
+			iter.flatten().filter(move |(k, v)| filter(k, v)).map(Ok),
+		))
+	}
 }
 impl<Previous> Change for Filter<Previous>
 where

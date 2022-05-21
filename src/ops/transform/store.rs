@@ -195,6 +195,58 @@ where
 	fn iter(&self) -> Self::Iter {
 		Box::new(self.fwd.iter().map(|v| v.map(|(k, v)| (k, v.into_vec()))))
 	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		self.sync.wait();
+		self.fwd.contains_key_ref(key)
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.get_lt_ref(key)?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		Ok(Some((k, v.into_vec())))
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.get_gt_ref(key)?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		Ok(Some((k, v.into_vec())))
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.first()?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		Ok(Some((k, v.into_vec())))
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		let e = self.fwd.last()?;
+		let e = unwrap_or_return!(e);
+		let (k, v) = e;
+		Ok(Some((k, v.into_vec())))
+	}
+	fn is_empty(&self) -> bool {
+		self.from.from.is_empty()
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		self.sync.wait();
+		let iter = self.fwd.range(range)?;
+		Ok(Box::new(iter.map(|v| v.map(|(k, v)| (k, v.into_vec())))))
+	}
 }
 impl<P, K, V, F, B> Change for MaterialTransform<P, K, V, F, B>
 where

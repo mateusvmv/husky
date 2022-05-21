@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bus::BusReader;
 use delegate::delegate;
-use std::{hash::Hash, sync::Arc};
+use std::{hash::Hash, ops::Deref, sync::Arc};
 
 use crate::{
 	macros::cloned,
@@ -67,7 +67,7 @@ where
 		);
 		Self { from, inner, sync }
 	}
-  /// Rebuilds the tree from its source view
+	/// Rebuilds the tree from its source view
 	pub fn rebuild(&self) -> Result<()> {
 		self.inner.clear()?;
 		for res in self.from.iter() {
@@ -83,6 +83,17 @@ where
 	}
 }
 
+impl<From, Inner> Deref for Material<From, Inner>
+where
+	From: View + Watch,
+	Inner: View + Change,
+{
+	type Target = Inner;
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
+}
+
 impl<From, Inner> View for Material<From, Inner>
 where
 	From: View + Watch,
@@ -90,13 +101,54 @@ where
 {
 	type Key = <Inner as View>::Key;
 	type Value = <Inner as View>::Value;
-	type Iter = Box<dyn Iterator<Item = Result<(Self::Key, Self::Value)>>>;
-	fn iter(&self) -> Self::Iter {
-		Box::new(self.inner.iter())
-	}
+	type Iter = Inner::Iter;
 	fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>> {
 		self.sync.wait();
 		self.inner.get_ref(key)
+	}
+	fn iter(&self) -> Self::Iter {
+		self.sync.wait();
+		self.inner.iter()
+	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		self.sync.wait();
+		self.inner.contains_key_ref(key)
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		self.inner.get_lt_ref(key)
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		self.inner.get_gt_ref(key)
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		self.inner.first()
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		self.sync.wait();
+		self.inner.last()
+	}
+	fn is_empty(&self) -> bool {
+		self.sync.wait();
+		self.inner.is_empty()
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		self.sync.wait();
+		self.inner.range(range)
 	}
 }
 impl<From, Inner> Change for Material<From, Inner>

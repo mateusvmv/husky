@@ -56,6 +56,45 @@ where
 				.into_iter(),
 		)
 	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		Ok(self.inner.read().unwrap().contains_key(key))
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
+		let map = self.inner.read().unwrap();
+		let value = map.range(..key).next_back();
+		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
+		let map = self.inner.read().unwrap();
+		let value = map.range(key..).next();
+		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>> {
+		let map = self.inner.read().unwrap();
+		let value = map.range(..).next();
+		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>> {
+		let map = self.inner.read().unwrap();
+		let value = map.range(..).next_back();
+		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
+	}
+	fn is_empty(&self) -> bool {
+		self.inner.read().unwrap().is_empty()
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		Ok(Box::new(
+			Arc::clone(&self.inner)
+				.read()
+				.unwrap()
+				.range(range)
+				.map(|(k, v)| Ok((k.clone(), v.clone())))
+				.collect::<Vec<_>>()
+				.into_iter()
+				.collect::<Vec<_>>()
+				.into_iter(),
+		))
+	}
 }
 
 impl<K, V> Change for Loaded<K, V>

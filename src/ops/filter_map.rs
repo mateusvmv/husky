@@ -124,6 +124,73 @@ where
 				}),
 		)
 	}
+	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
+		let v = self.from.contains_key_ref(key)?;
+		if !v {
+			return Ok(false);
+		};
+		let v = self.from.get_ref(key)?;
+		let v = if let Some(v) = v { v } else { return Ok(false) };
+		let v = (self.mapper)(key, &v);
+		Ok(v.is_some())
+	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.get_lt_ref(key)?;
+		let (k, v) = if let Some(v) = v { v } else { return Ok(None) };
+		let v = (self.mapper)(key, &v);
+		Ok(v.map(|v| (k, v)))
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.get_gt_ref(key)?;
+		let (k, v) = if let Some(v) = v { v } else { return Ok(None) };
+		let v = (self.mapper)(key, &v);
+		Ok(v.map(|v| (k, v)))
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.first()?;
+		let (k, v) = if let Some(v) = v { v } else { return Ok(None) };
+		let v = (self.mapper)(&k, &v);
+		Ok(v.map(|v| (k, v)))
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.last()?;
+		let (k, v) = if let Some(v) = v { v } else { return Ok(None) };
+		let v = (self.mapper)(&k, &v);
+		Ok(v.map(|v| (k, v)))
+	}
+  /// Calling is_empty on a filter will load an iterator
+	fn is_empty(&self) -> bool {
+		let e = self.from.is_empty();
+    if e { return true };
+    self.iter().size_hint().0 == 0
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		let mapper = Arc::clone(&self.mapper);
+		let v = self.from.range(range)?;
+		Ok(Box::new(
+			v.map(move |res| {
+				let (k, v) = res?;
+				let m = mapper(&k, &v);
+				Ok((k, m))
+			})
+			.filter_map(|res: Result<(Self::Key, Option<Self::Value>)>| match res {
+				Ok((k, Some(v))) => Some(Ok((k, v))),
+				_ => None,
+			}),
+		))
+	}
 }
 impl<Previous, Mapped> Change for FilterMap<Previous, Mapped>
 where

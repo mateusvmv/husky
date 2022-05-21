@@ -116,6 +116,58 @@ where
 			Ok((k, m))
 		}))
 	}
+	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.get_lt_ref(key)?;
+		let (k, v) = unwrap_or_return!(v);
+		let v = (self.mapper)(&k, &v);
+		Ok(Some((k, v)))
+	}
+	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.get_gt_ref(key)?;
+		let (k, v) = unwrap_or_return!(v);
+		let v = (self.mapper)(&k, &v);
+		Ok(Some((k, v)))
+	}
+	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.first()?;
+		let (k, v) = unwrap_or_return!(v);
+		let v = (self.mapper)(&k, &v);
+		Ok(Some((k, v)))
+	}
+	fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
+	where
+		Self::Key: Ord,
+	{
+		let v = self.from.last()?;
+		let (k, v) = unwrap_or_return!(v);
+		let v = (self.mapper)(&k, &v);
+		Ok(Some((k, v)))
+	}
+	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
+		let mapper = Arc::clone(&self.mapper);
+		let iter = self.from.range(range)?;
+		Ok(Box::new(iter.map(move |res| {
+			let (k, v) = res?;
+			let m = mapper(&k, &v);
+			Ok((k, m))
+		})))
+	}
+  #[rustfmt::skip]
+	delegate! {
+    to self.from {
+      fn contains_key_ref(&self, key: &Self::Key) -> Result<bool>;
+      fn is_empty(&self) -> bool;
+    }
+  }
 }
 impl<Previous, Mapped> Change for Map<Previous, Mapped>
 where

@@ -56,9 +56,9 @@ pub mod wrappers;
 
 pub use {
 	ops::Operate,
+	structs::{material::Material, single::Single},
 	traits::{change::Change, load::Load, store::Store, view::View, watch::Watch},
 	wrappers::{batch::Batch, tree::Tree},
-  structs::{material::Material, single::Single},
 };
 
 pub use database::Db;

@@ -3,7 +3,7 @@ use bus::Bus;
 use delegate::delegate;
 use sled::IVec;
 use std::{
-	fmt::Display,
+	ops::{Bound, RangeBounds},
 	sync::{Arc, RwLock},
 };
 
@@ -12,6 +12,7 @@ use crate::{
 	database::Db,
 	helpers::{deserialize_option, deserialize_tuple, serialize_option},
 	macros::unwrap_or_return,
+	structs::iter,
 	threads::Synchronizer,
 	traits::{
 		serial::Serial,
@@ -19,6 +20,9 @@ use crate::{
 	},
 	transaction::TransactionalTree,
 };
+
+pub(crate) type Iter<K, V> =
+	iter::Iter<sled::Iter, fn(Result<(IVec, IVec), sled::Error>) -> Result<(K, V)>, (K, V)>;
 
 /// Wrapper around [sled::Tree]
 pub struct Tree<K, V>
@@ -161,12 +165,12 @@ where
 		deserialize_option(value)
 	}
 	/// Delegates to [sled::Tree::contains_key]
-	pub fn contains_key(&self, key: &K) -> Result<bool> {
+	pub fn contains_key_ref(&self, key: &K) -> Result<bool> {
 		let key = Serial::serialize(key)?;
 		Ok(self.inner.contains_key(&key)?)
 	}
 	/// Delegates to [sled::Tree::get_lt]
-	pub fn get_lt(&self, key: &K) -> Result<Option<(K, V)>> {
+	pub fn get_lt_ref(&self, key: &K) -> Result<Option<(K, V)>> {
 		let key = Serial::serialize(key)?;
 		deserialize_tuple(
 			self.inner
@@ -175,7 +179,7 @@ where
 		)
 	}
 	/// Delegates to [sled::Tree::get_gt]
-	pub fn get_gt(&self, key: &K) -> Result<Option<(K, V)>> {
+	pub fn get_gt_ref(&self, key: &K) -> Result<Option<(K, V)>> {
 		let key = Serial::serialize(key)?;
 		deserialize_tuple(
 			self.inner
@@ -200,13 +204,23 @@ where
 		deserialize_tuple(self.inner.pop_min()?.map(|(k, v)| (k.to_vec(), v.to_vec())))
 	}
 	/// Delegates to [sled::Tree::iter]
-	pub fn iter(&self) -> Iter<sled::Iter, impl Fn((IVec, IVec)) -> Result<(K, V)>> {
-		Iter::new(self.inner.iter(), |(key, value): (IVec, IVec)| {
-			let (key, value) = (key.to_vec(), value.to_vec());
-			let key = Serial::deserialize(key)?;
-			let value = Serial::deserialize(value)?;
-			Ok((key, value))
-		})
+	pub fn iter(&self) -> Iter<K, V> {
+		Iter::new(self.inner.iter(), deserialize_entry)
+	}
+	/// Returns a range over the entries in the tree.
+	pub fn range(&self, range: impl RangeBounds<K>) -> Result<Iter<K, V>> {
+		let from = match range.start_bound() {
+			Bound::Included(i) => Bound::Included(Serial::serialize(i)?),
+			Bound::Excluded(i) => Bound::Excluded(Serial::serialize(i)?),
+			Bound::Unbounded => Bound::Unbounded,
+		};
+		let to = match range.end_bound() {
+			Bound::Included(i) => Bound::Included(Serial::serialize(i)?),
+			Bound::Excluded(i) => Bound::Excluded(Serial::serialize(i)?),
+			Bound::Unbounded => Bound::Unbounded,
+		};
+		let range = self.inner.range((from, to));
+		Ok(Iter::new(range, deserialize_entry))
 	}
 	/// Returns the inner [sled::Tree]
 	pub fn to_inner(&self) -> &sled::Tree {
@@ -237,30 +251,13 @@ where
 	}
 }
 
-/// An iterator over a tree
-pub struct Iter<From, Operation> {
-	from: From,
-	operation: Operation,
-}
-
-impl<From, Operation> Iter<From, Operation> {
-	fn new(from: From, operation: Operation) -> Self {
-		Iter { from, operation }
-	}
-}
-
-impl<From, Source, Operation, Key, Value, Error> Iterator for Iter<From, Operation>
+fn deserialize_entry<K, V>(r: Result<(IVec, IVec), sled::Error>) -> Result<(K, V)>
 where
-	Error: Display,
-	From: Iterator<Item = Result<Source, Error>>,
-	Operation: Fn(Source) -> Result<(Key, Value)>,
+	K: Serial,
+	V: Serial,
 {
-	type Item = Result<(Key, Value)>;
-	fn next(&mut self) -> Option<Self::Item> {
-		let next = self.from.next()?;
-		match next {
-			Ok(next) => Some((self.operation)(next)),
-			Err(err) => Some(Err(anyhow::anyhow!("{}", err))),
-		}
-	}
+	let (key, value) = r?;
+	let key = Serial::deserialize(key.to_vec())?;
+	let value = Serial::deserialize(value.to_vec())?;
+	Ok((key, value))
 }
