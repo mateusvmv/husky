@@ -138,15 +138,22 @@ where
 		let a = self.a.iter();
 		let b = self.b.iter();
 		let mut map = HashMap::new();
-		a.into_iter().flatten().for_each(|(k, v)| {
-			let e = map.entry(k).or_insert((None, None));
-			e.0 = Some(v);
-		});
-		b.into_iter().flatten().for_each(|(k, v)| {
-			let e = map.entry(k).or_insert((None, None));
-			e.1 = Some(v);
-		});
-		Box::new(map.into_iter().map(|(k, v)| Ok((k, v))))
+    let mut err = Vec::new();
+		a.into_iter().for_each(|r| match r {
+      Ok((k, v)) => {
+        let e = map.entry(k).or_insert((None, None));
+        e.0 = Some(v);
+      },
+      Err(e) => err.push(Err(e)),
+    });
+		b.into_iter().for_each(|r| match r {
+      Ok((k, v)) => {
+        let e = map.entry(k).or_insert((None, None));
+        e.1 = Some(v);
+      },
+      Err(e) => err.push(Err(e)),
+    });
+		Box::new(err.into_iter().chain(map.into_iter().map(Ok)))
 	}
 	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
 		Ok(self.a.contains_key_ref(key)? || self.b.contains_key_ref(key)?)
@@ -268,15 +275,22 @@ where
 		let a = self.a.range(a)?;
 		let b = self.b.range(b)?;
 		let mut map = HashMap::new();
-		a.into_iter().flatten().for_each(|(k, v)| {
-			let e = map.entry(k).or_insert((None, None));
-			e.0 = Some(v);
-		});
-		b.into_iter().flatten().for_each(|(k, v)| {
-			let e = map.entry(k).or_insert((None, None));
-			e.1 = Some(v);
-		});
-		Ok(Box::new(map.into_iter().map(Ok)))
+    let mut err = Vec::new();
+		a.for_each(|r| match r {
+      Ok((k, v)) => {
+        let e = map.entry(k).or_insert((None, None));
+        e.0 = Some(v);
+      },
+      Err(e) => err.push(Err(e)),
+    });
+		b.for_each(|r| match r {
+      Ok((k, v)) => {
+        let e = map.entry(k).or_insert((None, None));
+        e.1 = Some(v);
+      },
+      Err(e) => err.push(Err(e)),
+    });
+		Ok(Box::new(err.into_iter().chain(map.into_iter().map(Ok))))
 	}
 }
 

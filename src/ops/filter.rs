@@ -118,9 +118,18 @@ where
 			self.from
 				.clone()
 				.iter()
-				.flatten()
-				.filter(move |(k, v)| filter(k, v))
-				.map(Ok),
+        .filter_map(move |r| {
+          match r {
+            Ok((k, v)) => {
+              if filter(&k, &v) {
+                Some(Ok((k, v)))
+              } else {
+                None
+              }
+            },
+            Err(e) => Some(Err(e)),
+          }
+        })
 		)
 	}
 	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
@@ -195,7 +204,19 @@ where
 		let filter = Arc::clone(&self.filter);
 		let iter = self.from.range(range)?;
 		Ok(Box::new(
-			iter.flatten().filter(move |(k, v)| filter(k, v)).map(Ok),
+			iter
+        .filter_map(move |r| {
+          match r {
+            Ok((k, v)) => {
+              if filter(&k, &v) {
+                Some(Ok((k, v)))
+              } else {
+                None
+              }
+            },
+            Err(e) => Some(Err(e)),
+          }
+        })
 		))
 	}
 }
