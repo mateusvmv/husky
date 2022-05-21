@@ -154,7 +154,7 @@ where
 impl<T> Load for T
 where
 	T: View + Watch,
-	<T as View>::Key: Serial + Hash + Eq,
+	<T as View>::Key: Serial + Ord,
 	<T as View>::Value: Serial,
 {
 	type Loaded = Material<Self, Loaded<<T as View>::Key, <T as View>::Value>>;

@@ -1,8 +1,5 @@
-use std::collections::HashMap;
-use std::{
-	hash::Hash,
-	sync::{Arc, RwLock},
-};
+use std::collections::BTreeMap;
+use std::sync::{Arc, RwLock};
 
 use anyhow::Result;
 
@@ -18,7 +15,7 @@ pub trait Load {
 
 /// A tree loaded in memory.
 pub struct Loaded<K, V> {
-	inner: Arc<RwLock<HashMap<K, V>>>,
+	inner: Arc<RwLock<BTreeMap<K, V>>>,
 }
 impl<K, V> Loaded<K, V> {
 	pub(crate) fn new() -> Self {
@@ -37,7 +34,7 @@ impl<K, V> Clone for Loaded<K, V> {
 
 impl<K, V> View for Loaded<K, V>
 where
-	K: 'static + Clone + Send + Sync + Hash + Eq,
+	K: 'static + Clone + Send + Sync + Ord,
 	V: 'static + Clone + Send + Sync,
 {
 	type Key = K;
@@ -63,7 +60,7 @@ where
 
 impl<K, V> Change for Loaded<K, V>
 where
-	K: 'static + Clone + Send + Sync + Hash + Eq,
+	K: 'static + Clone + Send + Sync + Ord,
 	V: 'static + Clone + Send + Sync,
 {
 	type Key = K;
@@ -71,17 +68,17 @@ where
 	type Insert = V;
 	fn insert_owned(&self, key: K, value: V) -> Result<Option<<Self as Change>::Value>> {
 		let mut map = self.inner.write().unwrap();
-		let prev = HashMap::insert(&mut map, key, value);
+		let prev = BTreeMap::insert(&mut map, key, value);
 		Ok(prev)
 	}
 	fn remove_ref(&self, key: &<Self as Change>::Key) -> Result<Option<<Self as Change>::Value>> {
 		let mut map = self.inner.write().unwrap();
-		let prev = HashMap::remove(&mut map, key);
+		let prev = BTreeMap::remove(&mut map, key);
 		Ok(prev)
 	}
 	fn clear(&self) -> Result<()> {
 		let mut map = self.inner.write().unwrap();
-		HashMap::clear(&mut map);
+		BTreeMap::clear(&mut map);
 		Ok(())
 	}
 }

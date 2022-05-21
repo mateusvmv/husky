@@ -96,7 +96,7 @@ where
 		value: Self::Insert,
 	) -> Result<Option<<Self as Change>::Value>> {
 		let v = (self.inserter)(value);
-		self.from.insert_owned(key.clone(), v)
+		self.from.insert_owned(key, v)
 	}
   #[rustfmt::skip]
 	delegate! {

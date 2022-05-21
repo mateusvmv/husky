@@ -271,8 +271,8 @@ where
 impl<P, K, V> Load for Transform<P, K, V>
 where
 	P: Watch + View,
-	<P as View>::Key: Hash + Eq,
-	K: 'static + Clone + Send + Sync + Hash + Eq,
+	<P as View>::Key: Ord,
+	K: 'static + Clone + Send + Sync + Hash + Ord,
 	V: 'static + Clone + Send + Sync,
 {
 	type Loaded = MaterialTransform<

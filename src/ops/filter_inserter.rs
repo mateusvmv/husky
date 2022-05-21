@@ -97,7 +97,7 @@ where
 	) -> Result<Option<<Self as Change>::Value>> {
 		let v = (self.inserter)(value);
     match v {
-      Some(v) => self.from.insert_owned(key.clone(), v),
+      Some(v) => self.from.insert_owned(key, v),
       None => self.from.remove_owned(key)
     }
 	}

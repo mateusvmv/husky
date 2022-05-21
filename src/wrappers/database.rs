@@ -5,7 +5,7 @@ use std::{
 	hash::{Hash, Hasher},
 };
 
-use crate::{macros::hash, traits::serial::Serial, tree::Tree, structs::single::Single};
+use crate::{macros::hash, traits::{serial::Serial, load::Loaded}, tree::Tree, structs::single::Single};
 
 /// A wrapper around [sled::Db]
 #[derive(Clone)]
@@ -38,6 +38,14 @@ impl Db {
     V: Serial
   {
     Single::new(self.inner.clone(), key)
+  }
+  /// Opens a temporary tree, loaded into memory
+  pub fn open_temp<K, V>(&self) -> Loaded<K, V>
+  where
+    K: Serial,
+    V: Serial
+  {
+    Loaded::new()
   }
 	/// Drops the specified tree
 	pub fn drop_tree<N>(&self, name: &N) -> Result<bool>

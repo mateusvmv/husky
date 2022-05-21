@@ -58,7 +58,7 @@ where
 impl<P, I, F, B> MaterialIndex<P, I, F, B>
 where
 	P: Watch + Sync + Send,
-	I: 'static + Clone + Send + Sync + Hash + Eq,
+	I: 'static + Clone + Send + Sync + Hash + Ord,
 	F: Clone
 		+ View<Key = I, Value = StableVec<P::Key>>
 		+ Change<Key = I, Value = StableVec<P::Key>, Insert = StableVec<P::Key>>
@@ -277,7 +277,7 @@ use std::hash::Hasher;
 impl<P, I> Store for Index<P, I>
 where
 	P: Watch + Sync + Send,
-	I: Serial + Hash + Eq,
+	I: Serial + Hash + Ord,
 	<P as View>::Key: Serial,
 	StableVec<(I, usize)>: Serial,
 {
@@ -300,8 +300,8 @@ where
 impl<P, I> Load for Index<P, I>
 where
 	P: Watch + View + Sync + Send,
-	<P as View>::Key: Hash + Eq,
-	I: 'static + Clone + Send + Sync + Hash + Eq,
+	<P as View>::Key: Ord,
+	I: 'static + Clone + Send + Sync + Hash + Ord,
 {
 	type Loaded =
 		MaterialIndex<P, I, Loaded<I, StableVec<P::Key>>, Loaded<P::Key, StableVec<(I, usize)>>>;
