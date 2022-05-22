@@ -66,7 +66,7 @@ where
 	}
 	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
 		let map = self.inner.read();
-		let value = map.range(key..).next();
+		let value = map.range(key..).nth(1);
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>> {
