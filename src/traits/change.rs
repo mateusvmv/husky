@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use super::view::View;
+use super::{view::View, auto_inc::AutoInc};
 
 enum EntryKey<'a, K> {
 	Ref(&'a K),
@@ -130,6 +130,30 @@ where
 			from: self,
 		})
 	}
+  /// Pushes a value onto the end of the tree.
+  fn push_owned(&self, value: <Self as Change>::Insert) -> Result<()>
+  where
+    Self: View<Key = <Self as Change>::Key>,
+    <Self as View>::Key: AutoInc + Ord
+  {
+    let l = self.last()?;
+    let k = match l {
+      Some((k, _)) => k.next(),
+      None => <Self as View>::Key::first(),
+    };
+    self.insert_owned(k, value)?;
+    Ok(())
+  }
+  /// Pushes a value onto the end of the tree.
+  fn push<V: Into<<Self as Change>::Insert>>(&self, value: V) -> Result<()>
+  where
+    Self: View<Key = <Self as Change>::Key>,
+    <Self as View>::Key: AutoInc + Ord,
+    V: Into<<Self as Change>::Insert>,
+  {
+    let v = value.into();
+    self.push_owned(v)
+  }
 	/// Removes an owned key.
 	fn remove_owned(&self, key: <Self as Change>::Key) -> Result<Option<<Self as Change>::Value>> {
 		self.remove_ref(&key)
