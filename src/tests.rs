@@ -430,3 +430,29 @@ fn reduce() {
 		assert_none(&loaded);
 	});
 }
+
+#[test]
+fn gt() {
+  with_tree(|tree: Tree<u32, u32>| {
+    insert(&tree, 2);
+    for i in 0..(TEST_SIZE - 1) {
+      let gt = tree.get_gt(i).unwrap().unwrap();
+      let e = i + 1;
+      let e = (e, e.pow(2));
+      assert_eq!(gt, e);
+    }
+  });
+}
+
+#[test]
+fn range() {
+  with_tree(|tree: Tree<u32, u32>| {
+    insert(&tree, 2);
+    let mut range = tree.range(10..TEST_SIZE).unwrap();
+    for i in 10..TEST_SIZE {
+      let e = (i, i.pow(2));
+      let r = range.next().unwrap().unwrap();
+      assert_eq!(e, r);
+    }
+  });
+}
