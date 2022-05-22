@@ -2,43 +2,13 @@
 //! Husky is a library for creating databases like iterators.
 //! It is built around [sled].
 //!
-//! For operations, refer to [ops]. There are more examples there, too.
-//!
-//! For others, take a look at [traits]
-//! # Examples
-//! ```
-//! use husky::{Tree, Operate, Change, Load, View};
-//! // Or husky::open("db_path").unwrap()
-//! let db = husky::open_temp().unwrap();
-//! let tree: Tree<i32, i32> = db.open_tree("tree").unwrap();
-//!
-//! for i in 0..100 {
-//!   tree.insert(i, i).unwrap();
-//! }
-//! // Change the tree values
-//! let double = tree.map(|_, v| v * 2);
-//! double.iter()
-//!   .flatten()
-//!   .for_each(|(k, v)| assert_eq!(k * 2, v));
-//!
-//! // Change the tree keys
-//! let string_idx = tree.index(|k, _| vec![k.to_string()])
-//!   .load()
-//!   .unwrap()
-//!   .map(|_, v| v[0]);
-//! string_idx.iter()
-//!   .flatten()
-//!   .for_each(|(k, v)| assert_eq!(k, v.to_string()));
-//!
-//! // Zip two trees
-//! let window = tree.zip(&double);
-//! window.iter()
-//!   .flatten()
-//!   .for_each(|(k, (v, d))| {
-//!     assert_eq!(Some(k), v);
-//!     assert_eq!(Some(k * 2), d);
-//!   });
-//! ```
+//! Take a look at the README to get started.
+//! 
+//! Take a look at [ops] for a list of available operations.
+//! 
+//! There are examples in the individual operations.
+//! 
+//! Take a look at [traits] for a list of available traits.
 
 use anyhow::Result;
 use std::path::Path;
