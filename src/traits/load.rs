@@ -79,8 +79,8 @@ where
 		let value = map.range(..).next_back();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
-	fn is_empty(&self) -> bool {
-		self.inner.read().is_empty()
+	fn is_empty(&self) -> Option<bool> {
+		Some(self.inner.read().is_empty())
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		Ok(Box::new(

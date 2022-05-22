@@ -142,7 +142,7 @@ where
 		self.sync.wait();
 		self.inner.last()
 	}
-	fn is_empty(&self) -> bool {
+	fn is_empty(&self) -> Option<bool> {
 		self.sync.wait();
 		self.inner.is_empty()
 	}

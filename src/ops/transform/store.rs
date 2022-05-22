@@ -240,7 +240,7 @@ where
 		let (k, v) = e;
 		Ok(Some((k, v.into_vec())))
 	}
-	fn is_empty(&self) -> bool {
+	fn is_empty(&self) -> Option<bool> {
 		self.from.from.is_empty()
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {

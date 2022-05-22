@@ -291,7 +291,7 @@ where
 		let v = values_from_keys!(self.from.from, v);
 		Ok(Some((k, v)))
 	}
-	fn is_empty(&self) -> bool {
+	fn is_empty(&self) -> Option<bool> {
 		self.from.from.is_empty()
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {

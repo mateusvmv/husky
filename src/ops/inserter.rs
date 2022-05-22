@@ -91,7 +91,7 @@ where
       fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
       where
         Self::Key: Ord;
-      fn is_empty(&self) -> bool;
+      fn is_empty(&self) -> Option<bool>;
       fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter>;
     }
   );

@@ -215,8 +215,15 @@ where
 			},
 		}
 	}
-	fn is_empty(&self) -> bool {
-		self.a.is_empty() && self.b.is_empty()
+	fn is_empty(&self) -> Option<bool> {
+		let a = self.a.is_empty();
+    let b = self.b.is_empty();
+    match (a, b) {
+      (Some(a), Some(b)) => Some(a && b),
+      (Some(a), None) => if a { None } else { Some(a) },
+      (None, Some(b)) => if b { None } else { Some(b) },
+      (None, None) => None,
+    }
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		let a = (range.start_bound(), range.end_bound());

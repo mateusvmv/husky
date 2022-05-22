@@ -17,9 +17,9 @@ type ReduceFn<P, M> =
 	dyn Fn(Option<<P as View>::Value>, M) -> Option<<P as Change>::Insert> + Send + Sync;
 
 /// A struct that reduces values on insert.
-/// You can create a [Reducer] from a [Change] struct.
+/// You can create a [FilterReducer] from a [Change] struct.
 /// # Important
-/// If you perform an insert that bypasses the [Reducer] struct, be in on the tree or in another reduce, you may experience data races.
+/// If you perform an insert that bypasses the [FilterReducer] struct, be in on the tree or in another reduce, you may experience data races.
 ///
 /// # Examples
 /// ```
@@ -105,7 +105,7 @@ where
       fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>
       where
         Self::Key: Ord;
-      fn is_empty(&self) -> bool;
+      fn is_empty(&self) -> Option<bool>;
       fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter>;
     }
   );

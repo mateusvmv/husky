@@ -166,7 +166,7 @@ where
 	delegate! {
     to self.from {
       fn contains_key_ref(&self, key: &Self::Key) -> Result<bool>;
-      fn is_empty(&self) -> bool;
+      fn is_empty(&self) -> Option<bool>;
     }
   }
 }

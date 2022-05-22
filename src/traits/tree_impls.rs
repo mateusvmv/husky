@@ -36,8 +36,10 @@ where
       fn last(&self) -> Result<Option<(Self::Key, Self::Value)>>;
       fn range(&self, range: impl RangeBounds<Self::Key>) -> Result<Self::Iter>;
       fn iter(&self) -> Self::Iter;
-      fn is_empty(&self) -> bool;
 	  }
+  }
+  fn is_empty(&self) -> Option<bool> {
+    Some(self.is_empty())
   }
 }
 

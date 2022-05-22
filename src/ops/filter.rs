@@ -195,11 +195,9 @@ where
 			Ok(None)
 		}
 	}
-  /// Calling is_empty on a filter will load an iterator
-	fn is_empty(&self) -> bool {
+	fn is_empty(&self) -> Option<bool> {
 		let e = self.from.is_empty();
-    if e { return true };
-		self.iter().size_hint().0 == 0
+    if e  == Some(true) { e } else { None }
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		let filter = Arc::clone(&self.filter);

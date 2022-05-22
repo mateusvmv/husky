@@ -56,7 +56,7 @@ where
 	where
 		Self::Key: Ord;
 	/// Checks if tree is empty
-	fn is_empty(&self) -> bool;
+	fn is_empty(&self) -> Option<bool>;
 	/// Gets an iterator over a key range in the tree
 	fn range(&self, range: impl RangeBounds<Self::Key>) -> Result<Self::Iter>;
 	/// Gets an iterator over the entries in the tree.
