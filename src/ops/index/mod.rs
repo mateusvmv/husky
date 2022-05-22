@@ -11,7 +11,7 @@ type Indexer<K, V, I> = dyn Fn(&K, &V) -> Vec<I> + Send + Sync;
 /// A struct that reindexes entries.
 /// You can create an [Index] from a [View] struct.
 ///
-/// [Index] doesn't implement [View] or [Watch] unless you have the `fullscan` feature enabled.
+/// [Index] doesn't implement [View] or [Watch], you must store it first.
 /// Its value is a [Vec], because multiple entries can share a key.
 /// # Examples
 /// ```
@@ -58,44 +58,6 @@ where
 	{
 		let indexer = Arc::new(indexer);
 		Index { from, indexer }
-	}
-}
-
-#[cfg(feature = "fullscan")]
-use std::{collections::HashMap, hash::Hash};
-#[cfg(feature = "fullscan")]
-impl<P, I> View for Index<P, I>
-where
-	P: View,
-	I: Serial + Hash + Eq,
-{
-	type Key = I;
-	type Value = Vec<P::Value>;
-	type Iter = Box<dyn Iterator<Item = Result<(I, Vec<P::Value>)>>>;
-	fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>> {
-		let vec = self
-			.from
-			.iter()
-			.filter_map(|res| res.ok())
-			.filter(|(k, v)| (self.indexer)(&k, &v).contains(key))
-			.map(|(_, v)| v)
-			.collect::<Vec<_>>();
-		if vec.is_empty() {
-			Ok(None)
-		} else {
-			Ok(Some(vec))
-		}
-	}
-	fn iter(&self) -> Self::Iter {
-		let indexer = Arc::clone(&self.indexer);
-		let mut map = HashMap::new();
-		for (k, v) in self.from.iter().flatten() {
-			for k in (indexer)(&k, &v) {
-				let vec = map.entry(k).or_insert_with(Vec::new);
-				vec.push(v.clone());
-			}
-		}
-		Box::new(map.into_iter().map(Ok))
 	}
 }
 

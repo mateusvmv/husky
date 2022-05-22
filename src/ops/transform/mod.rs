@@ -11,7 +11,7 @@ type Transformer<K, V, NK, NV> = dyn Fn(&K, &V) -> Vec<(NK, NV)> + Send + Sync;
 /// A struct that transforms entries.
 /// You can create a [Transform] from a [View] struct.
 ///
-/// [Transform] doesn't implement [View] or [Watch] unless you have the `fullscan` feature enabled.
+/// [Transform] doesn't implement [View] or [Watch], you must store it first.
 /// Its value is a [Vec], because multiple entries can share a key.
 /// # Examples
 /// ```
@@ -59,46 +59,6 @@ where
 	{
 		let transformer = Arc::new(transformer);
 		Transform { from, transformer }
-	}
-}
-
-#[cfg(feature = "fullscan")]
-use std::{collections::HashMap, hash::Hash};
-#[cfg(feature = "fullscan")]
-impl<P, K, V> View for Transform<P, K, V>
-where
-	P: View,
-	K: Serial + Hash + Eq,
-	V: Serial,
-{
-	type Key = K;
-	type Value = Vec<V>;
-	type Iter = Box<dyn Iterator<Item = Result<(K, Vec<V>)>>>;
-	fn get_ref(&self, key: &Self::Key) -> Result<Option<Self::Value>> {
-		let vec = self
-			.from
-			.iter()
-			.filter_map(|res| res.ok())
-			.flat_map(|(k, v)| (self.transformer)(&k, &v))
-			.filter(|(k, _)| k == key)
-			.map(|(_, v)| v)
-			.collect::<Vec<_>>();
-		if vec.is_empty() {
-			Ok(None)
-		} else {
-			Ok(Some(vec))
-		}
-	}
-	fn iter(&self) -> Self::Iter {
-		let transformer = Arc::clone(&self.transformer);
-		let mut map = HashMap::new();
-		for (k, v) in self.from.iter().flatten() {
-			for (k, v) in (transformer)(&k, &v) {
-				let vec = map.entry(k).or_insert_with(Vec::new);
-				vec.push(v);
-			}
-		}
-		Box::new(map.into_iter().map(Ok))
 	}
 }
 

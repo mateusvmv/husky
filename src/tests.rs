@@ -94,8 +94,6 @@ fn transform() {
 
 		remove(&stored);
 
-		#[cfg(feature = "fullscan")]
-		assert_none(&transform);
 		assert_none(&stored);
 		assert_none(&loaded);
 	})
