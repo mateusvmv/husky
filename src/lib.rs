@@ -57,7 +57,7 @@ pub mod wrappers;
 pub use {
 	ops::Operate,
 	structs::{material::Material, single::Single},
-	traits::{change::Change, load::Load, store::Store, view::View, watch::Watch},
+	traits::{change::Change, load::Load, store::Store, view::View, watch::Watch, auto_inc::AutoInc},
 	wrappers::{batch::Batch, tree::Tree},
 };
 
