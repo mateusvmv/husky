@@ -69,7 +69,9 @@ impl<T> StableVec<T> {
 				self.used.set(idx, true);
 				self.vec.insert(idx, item);
 				indexes.push(idx);
-			}
+			} else {
+        break;
+      }
 		}
 		for item in iter {
 			let i = self.vec.len();
