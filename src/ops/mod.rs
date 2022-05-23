@@ -40,11 +40,12 @@ pub mod zip;
 /// A trait that allows you to operate trees.
 pub trait Operate
 where
-	Self: Sized + Clone + View + Watch + Sync + Send,
+	Self: Sized + Clone + Sync + Send,
 {
 	/// Changes entry values. Please refer to [Map]
 	fn map<M, Mapped>(&self, mapper: M) -> Map<Self, Mapped>
 	where
+    Self: View + Watch,
 		M: 'static + Fn(&Self::Key, &Self::Value) -> Mapped + Sync + Send,
 		Mapped: 'static + Clone + Send + Sync,
 	{
@@ -53,6 +54,7 @@ where
 	/// Transforms an entry into multiple entries. Please refer to [Transform]
 	fn transform<K, V, T>(&self, transformer: T) -> Transform<Self, K, V>
 	where
+    Self: View + Watch,
 		T: 'static + Fn(&Self::Key, &Self::Value) -> Vec<(K, V)> + Sync + Send,
 		K: Serial,
 		V: Serial,
@@ -62,6 +64,7 @@ where
 	/// Changes entry keys. Please refer to [Index]
 	fn index<F, I>(&self, indexer: F) -> Index<Self, I>
 	where
+    Self: View + Watch,
 		F: 'static + Fn(&Self::Key, &Self::Value) -> Vec<I> + Sync + Send,
 		I: Serial,
 	{
@@ -70,7 +73,7 @@ where
 	/// Chains two trees together. Please refer to [Chain]
 	fn chain<B>(&self, other: &B) -> Chain<Self, B>
 	where
-		Self: Sync + Send,
+		Self: View + Sync + Send + Watch,
 		B: View<Key = Self::Key, Value = Self::Value> + Watch + Sync + Send,
 	{
 		Chain::new(self.clone(), other.clone())
@@ -78,7 +81,7 @@ where
 	/// Zips two trees together. Please refer to [Zip]
 	fn zip<B>(&self, other: &B) -> Zip<Self, B>
 	where
-		Self: Sync + Send,
+		Self: View + Sync + Send + Watch,
 		B: View<Key = Self::Key> + Watch + Sync + Send,
 	{
 		Zip::new(self.clone(), other.clone())
@@ -86,7 +89,7 @@ where
 	/// Creates two new trees from a tuple tree, essentially undoing [Zip].
 	fn unzip<A, B>(&self) -> (Map<Self, A>, Map<Self, B>)
 	where
-		Self: View<Value = (A, B)>,
+		Self: View<Value = (A, B)> + Watch,
 		A: Serial,
 		B: Serial,
 	{
@@ -97,6 +100,7 @@ where
 	/// Filters values in a tree. Please refer to [Filter]
 	fn filter<F>(&self, filter: F) -> Filter<Self>
 	where
+    Self: View + Watch,
 		F: 'static + Fn(&Self::Key, &Self::Value) -> bool + Sync + Send,
 	{
 		Filter::new(self.clone(), filter)
@@ -104,6 +108,7 @@ where
 	/// Filters values in a tree after a map. Please refer to [FilterMap]
 	fn filter_map<F, Mapped>(&self, mapper: F) -> FilterMap<Self, Mapped>
 	where
+    Self: View + Watch,
 		F: 'static + Fn(&Self::Key, &Self::Value) -> Option<Mapped> + Sync + Send,
 		Mapped: 'static + Clone + Send + Sync,
 	{
@@ -112,7 +117,7 @@ where
 	/// Reduces and filters inserts to a tree. Please refer to [FilterReducer]
 	fn filter_reducer<ReduceFn, Merge>(&self, reducer: ReduceFn) -> FilterReducer<Self, Merge>
 	where
-		Self: Change,
+		Self: View + Change,
 		ReduceFn: 'static
 			+ Fn(Option<<Self as View>::Value>, Merge) -> Option<<Self as Change>::Insert>
 			+ Sync
@@ -123,7 +128,7 @@ where
 	/// Reduces inserts to a tree. Please refer to [Reducer]
 	fn reducer<ReduceFn, Merge>(&self, reducer: ReduceFn) -> Reducer<Self, Merge>
 	where
-		Self: Change,
+		Self: View + Change,
 		ReduceFn: 'static
 			+ Fn(Option<<Self as View>::Value>, Merge) -> <Self as Change>::Insert
 			+ Sync
@@ -134,7 +139,7 @@ where
 	/// Parses inserts to a tree. Please refer to [FilterInserter]
 	fn filter_inserter<InsertFn, Insert>(&self, inserter: InsertFn) -> FilterInserter<Self, Insert>
 	where
-		Self: Change,
+		Self: 'static + Change,
 		InsertFn: 'static + Fn(Insert) -> Option<<Self as Change>::Insert> + Sync + Send,
 	{
 		FilterInserter::new(self.clone(), inserter)
@@ -142,7 +147,7 @@ where
 	/// Parses inserts to a tree. Please refer to [Inserter]
 	fn inserter<InsertFn, Insert>(&self, inserter: InsertFn) -> Inserter<Self, Insert>
 	where
-		Self: Change,
+		Self: 'static + Change,
 		InsertFn: 'static + Fn(Insert) -> <Self as Change>::Insert + Sync + Send,
 	{
 		Inserter::new(self.clone(), inserter)
@@ -150,6 +155,7 @@ where
 	/// Pipes changes to another tree.
 	fn pipe<O>(&self, other: O)
 	where
+    Self: View + Watch,
 		O: Change<Key = Self::Key, Insert = Self::Value> + Watch + Send + Sync,
 	{
 		let sync = other.sync();

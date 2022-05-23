@@ -37,7 +37,7 @@ type InsertFn<P, M> = dyn Fn(M) -> <P as Change>::Insert + Send + Sync;
 /// ```
 pub struct Inserter<Previous, Merge>
 where
-	Previous: View + Change,
+	Previous: Change,
 {
 	inserter: Arc<InsertFn<Previous, Merge>>,
 	from: Previous,
@@ -53,7 +53,7 @@ impl<P: Clone + View + Change, M> Clone for Inserter<P, M> {
 
 impl<P, Insert> Inserter<P, Insert>
 where
-	P: View + Change,
+	P: Change,
 {
 	pub(crate) fn new<ReduceFn>(from: P, inserter: ReduceFn) -> Self
 	where
@@ -98,7 +98,7 @@ where
 }
 impl<Previous, Merge> Change for Inserter<Previous, Merge>
 where
-	Previous: View + Change<Key = <Previous as View>::Key>,
+	Previous: Change,
 	Merge: 'static + Clone + Send + Sync,
 {
 	type Key = <Previous as Change>::Key;
