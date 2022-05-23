@@ -4,11 +4,16 @@ use std::marker::PhantomData;
 use crate::traits::serial::Serial;
 
 /// A wrapper around [sled::Batch]
-#[derive(Default)]
 pub struct Batch<K, V> {
 	inner: sled::Batch,
 	k: PhantomData<K>,
 	v: PhantomData<V>,
+}
+
+impl<K, V> Default for Batch<K, V> {
+  fn default() -> Self {
+    Self { inner: Default::default(), k: PhantomData, v: PhantomData }
+  }
 }
 
 impl<K, V> Batch<K, V>
