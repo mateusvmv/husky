@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, ops::Bound};
 use std::sync::Arc;
 use parking_lot::RwLock;
 
@@ -61,12 +61,12 @@ where
 	}
 	fn get_lt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
 		let map = self.inner.read();
-		let value = map.range(..key).next_back();
+		let value = map.range((Bound::Unbounded, Bound::Excluded(key))).next_back();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn get_gt_ref(&self, key: &Self::Key) -> Result<Option<(Self::Key, Self::Value)>> {
 		let map = self.inner.read();
-		let value = map.range(key..).nth(1);
+		let value = map.range((Bound::Excluded(key), Bound::Unbounded)).next();
 		Ok(value.map(|(k, v)| (k.clone(), v.clone())))
 	}
 	fn first(&self) -> Result<Option<(Self::Key, Self::Value)>> {
