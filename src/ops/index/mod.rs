@@ -80,7 +80,7 @@ where
       fn fetch_and_update(
         &self,
         key: &Self::Key,
-        mut f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
+        f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
       ) -> Result<Option<Self::Value>>;
 	  }
 	}
