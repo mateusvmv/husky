@@ -1,8 +1,9 @@
-use parking_lot::{
-  Mutex, RwLock,
-};
+use parking_lot::{Mutex, RwLock};
 use std::{
-  sync::{Arc, atomic::{AtomicU32, Ordering::Relaxed}},
+	sync::{
+		atomic::{AtomicU32, Ordering::Relaxed},
+		Arc,
+	},
 	thread::Thread,
 };
 

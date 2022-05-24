@@ -1,8 +1,8 @@
 use anyhow::Result;
 use bus::Bus;
 use delegate::delegate;
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::{
 	macros::{cloned, unwrap_or_return},
@@ -115,23 +115,16 @@ where
 	}
 	fn iter(&self) -> Self::Iter {
 		let filter = Arc::clone(&self.filter);
-		Box::new(
-			self.from
-				.clone()
-				.iter()
-        .filter_map(move |r| {
-          match r {
-            Ok((k, v)) => {
-              if filter(&k, &v) {
-                Some(Ok((k, v)))
-              } else {
-                None
-              }
-            },
-            Err(e) => Some(Err(e)),
-          }
-        })
-		)
+		Box::new(self.from.clone().iter().filter_map(move |r| match r {
+			Ok((k, v)) => {
+				if filter(&k, &v) {
+					Some(Ok((k, v)))
+				} else {
+					None
+				}
+			}
+			Err(e) => Some(Err(e)),
+		}))
 	}
 	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
 		let c = self.from.contains_key_ref(key)?;
@@ -197,26 +190,25 @@ where
 	}
 	fn is_empty(&self) -> Option<bool> {
 		let e = self.from.is_empty();
-    if e  == Some(true) { e } else { None }
+		if e == Some(true) {
+			e
+		} else {
+			None
+		}
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		let filter = Arc::clone(&self.filter);
 		let iter = self.from.range(range)?;
-		Ok(Box::new(
-			iter
-        .filter_map(move |r| {
-          match r {
-            Ok((k, v)) => {
-              if filter(&k, &v) {
-                Some(Ok((k, v)))
-              } else {
-                None
-              }
-            },
-            Err(e) => Some(Err(e)),
-          }
-        })
-		))
+		Ok(Box::new(iter.filter_map(move |r| match r {
+			Ok((k, v)) => {
+				if filter(&k, &v) {
+					Some(Ok((k, v)))
+				} else {
+					None
+				}
+			}
+			Err(e) => Some(Err(e)),
+		})))
 	}
 }
 impl<Previous> Change for Filter<Previous>

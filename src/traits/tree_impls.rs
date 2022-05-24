@@ -38,9 +38,9 @@ where
       fn iter(&self) -> Self::Iter;
 	  }
   }
-  fn is_empty(&self) -> Option<bool> {
-    Some(self.is_empty())
-  }
+	fn is_empty(&self) -> Option<bool> {
+		Some(self.is_empty())
+	}
 }
 
 impl<Key, Value> Watch for Tree<Key, Value>

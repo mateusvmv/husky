@@ -79,17 +79,20 @@ mod rkyv {
 mod serde {
 	use crate::traits::serial::Serial;
 	use anyhow::Result;
-	use bincode::{DefaultOptions, Options, config::{WithOtherEndian, BigEndian}};
+	use bincode::{
+		config::{BigEndian, WithOtherEndian},
+		DefaultOptions, Options,
+	};
 	use serde::{Deserialize, Serialize};
-  fn big_endian() -> WithOtherEndian<DefaultOptions, BigEndian> {
-    DefaultOptions::new().with_big_endian()
-  }
+	fn big_endian() -> WithOtherEndian<DefaultOptions, BigEndian> {
+		DefaultOptions::new().with_big_endian()
+	}
 	impl<T> Serial for T
 	where
 		T: 'static + Sized + Clone + Serialize + for<'a> Deserialize<'a> + Sync + Send,
 	{
 		fn serialize(&self) -> Result<Vec<u8>> {
-      Ok(big_endian().serialize(&self)?)
+			Ok(big_endian().serialize(&self)?)
 		}
 		fn deserialize(bytes: Vec<u8>) -> Result<Self> {
 			Ok(big_endian().deserialize(&bytes)?)

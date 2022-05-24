@@ -1,12 +1,8 @@
 use anyhow::Result;
 use bus::{Bus, BusReader};
 use delegate::delegate;
-use std::{
-	collections::HashMap,
-	hash::Hash,
-	sync::Arc,
-};
 use parking_lot::RwLock;
+use std::{collections::HashMap, hash::Hash, sync::Arc};
 
 use crate::{
 	macros::{cloned, hash, unwrap_or_return},

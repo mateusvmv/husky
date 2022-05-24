@@ -1,8 +1,8 @@
 use anyhow::Result;
 use bus::Bus;
 use delegate::delegate;
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::{
 	macros::{cloned, unwrap_or_return},
@@ -173,7 +173,11 @@ where
 	}
 	fn is_empty(&self) -> Option<bool> {
 		let e = self.from.is_empty();
-    if e == Some(true) { e } else { None }
+		if e == Some(true) {
+			e
+		} else {
+			None
+		}
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		let mapper = Arc::clone(&self.mapper);

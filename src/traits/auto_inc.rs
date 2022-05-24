@@ -1,18 +1,22 @@
 /// An auto-incrementable key.
 pub trait AutoInc {
-  /// The next item in the sequence.
-  fn next(&self) -> Self;
-  /// The first item in the sequence.
-  fn first() -> Self;
+	/// The next item in the sequence.
+	fn next(&self) -> Self;
+	/// The first item in the sequence.
+	fn first() -> Self;
 }
 
 macro_rules! impl_auto_inc {
-  ($t:ty) => {
-    impl AutoInc for $t {
-      fn next(&self) -> Self { *self + 1 }
-      fn first() -> Self { 1 }
-    } 
-  };
+	($t:ty) => {
+		impl AutoInc for $t {
+			fn next(&self) -> Self {
+				*self + 1
+			}
+			fn first() -> Self {
+				1
+			}
+		}
+	};
 }
 
 impl_auto_inc!(u8);

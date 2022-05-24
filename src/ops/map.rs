@@ -1,8 +1,8 @@
 use anyhow::Result;
 use bus::Bus;
 use delegate::delegate;
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::{
 	macros::{cloned, unwrap_or_return},

@@ -1,12 +1,12 @@
 use anyhow::Result;
 use bus::Bus;
 use delegate::delegate;
+use parking_lot::RwLock;
 use sled::IVec;
 use std::{
 	ops::{Bound, RangeBounds},
 	sync::Arc,
 };
-use parking_lot::RwLock;
 
 use crate::{
 	batch::Batch,

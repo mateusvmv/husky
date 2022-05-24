@@ -1,3 +1,5 @@
+/// Allows for automatic incrementing of keys.
+pub mod auto_inc;
 /// Allows for changes to entries in a tree.
 pub mod change;
 /// Allows for loading of trees in memory.
@@ -11,5 +13,3 @@ mod tree_impls;
 pub mod view;
 /// Allows for monitoring of tree changes.
 pub mod watch;
-/// Allows for automatic incrementing of keys.
-pub mod auto_inc;

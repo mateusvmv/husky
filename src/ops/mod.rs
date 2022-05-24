@@ -45,7 +45,7 @@ where
 	/// Changes entry values. Please refer to [Map]
 	fn map<M, Mapped>(&self, mapper: M) -> Map<Self, Mapped>
 	where
-    Self: View + Watch,
+		Self: View + Watch,
 		M: 'static + Fn(&Self::Key, &Self::Value) -> Mapped + Sync + Send,
 		Mapped: 'static + Clone + Send + Sync,
 	{
@@ -54,7 +54,7 @@ where
 	/// Transforms an entry into multiple entries. Please refer to [Transform]
 	fn transform<K, V, T>(&self, transformer: T) -> Transform<Self, K, V>
 	where
-    Self: View + Watch,
+		Self: View + Watch,
 		T: 'static + Fn(&Self::Key, &Self::Value) -> Vec<(K, V)> + Sync + Send,
 		K: Serial,
 		V: Serial,
@@ -64,7 +64,7 @@ where
 	/// Changes entry keys. Please refer to [Index]
 	fn index<F, I>(&self, indexer: F) -> Index<Self, I>
 	where
-    Self: View + Watch,
+		Self: View + Watch,
 		F: 'static + Fn(&Self::Key, &Self::Value) -> Vec<I> + Sync + Send,
 		I: Serial,
 	{
@@ -100,7 +100,7 @@ where
 	/// Filters values in a tree. Please refer to [Filter]
 	fn filter<F>(&self, filter: F) -> Filter<Self>
 	where
-    Self: View + Watch,
+		Self: View + Watch,
 		F: 'static + Fn(&Self::Key, &Self::Value) -> bool + Sync + Send,
 	{
 		Filter::new(self.clone(), filter)
@@ -108,7 +108,7 @@ where
 	/// Filters values in a tree after a map. Please refer to [FilterMap]
 	fn filter_map<F, Mapped>(&self, mapper: F) -> FilterMap<Self, Mapped>
 	where
-    Self: View + Watch,
+		Self: View + Watch,
 		F: 'static + Fn(&Self::Key, &Self::Value) -> Option<Mapped> + Sync + Send,
 		Mapped: 'static + Clone + Send + Sync,
 	{
@@ -155,7 +155,7 @@ where
 	/// Pipes changes to another tree.
 	fn pipe<O>(&self, other: O)
 	where
-    Self: View + Watch,
+		Self: View + Watch,
 		O: Change<Key = Self::Key, Insert = Self::Value> + Watch + Send + Sync,
 	{
 		let sync = other.sync();

@@ -1,12 +1,7 @@
 use anyhow::Result;
 use bus::{Bus, BusReader};
-use std::{
-	cmp::Ordering,
-	collections::HashMap,
-	hash::Hash,
-	sync::Arc,
-};
 use parking_lot::RwLock;
+use std::{cmp::Ordering, collections::HashMap, hash::Hash, sync::Arc};
 
 use crate::{
 	macros::cloned,
@@ -139,21 +134,21 @@ where
 		let a = self.a.iter();
 		let b = self.b.iter();
 		let mut map = HashMap::new();
-    let mut err = Vec::new();
+		let mut err = Vec::new();
 		a.into_iter().for_each(|r| match r {
-      Ok((k, v)) => {
-        let e = map.entry(k).or_insert((None, None));
-        e.0 = Some(v);
-      },
-      Err(e) => err.push(Err(e)),
-    });
+			Ok((k, v)) => {
+				let e = map.entry(k).or_insert((None, None));
+				e.0 = Some(v);
+			}
+			Err(e) => err.push(Err(e)),
+		});
 		b.into_iter().for_each(|r| match r {
-      Ok((k, v)) => {
-        let e = map.entry(k).or_insert((None, None));
-        e.1 = Some(v);
-      },
-      Err(e) => err.push(Err(e)),
-    });
+			Ok((k, v)) => {
+				let e = map.entry(k).or_insert((None, None));
+				e.1 = Some(v);
+			}
+			Err(e) => err.push(Err(e)),
+		});
 		Box::new(err.into_iter().chain(map.into_iter().map(Ok)))
 	}
 	fn contains_key_ref(&self, key: &Self::Key) -> Result<bool> {
@@ -269,13 +264,25 @@ where
 	}
 	fn is_empty(&self) -> Option<bool> {
 		let a = self.a.is_empty();
-    let b = self.b.is_empty();
-    match (a, b) {
-      (Some(a), Some(b)) => Some(a && b),
-      (Some(a), None) => if a { None } else { Some(a) },
-      (None, Some(b)) => if b { None } else { Some(b) },
-      (None, None) => None,
-    }
+		let b = self.b.is_empty();
+		match (a, b) {
+			(Some(a), Some(b)) => Some(a && b),
+			(Some(a), None) => {
+				if a {
+					None
+				} else {
+					Some(a)
+				}
+			}
+			(None, Some(b)) => {
+				if b {
+					None
+				} else {
+					Some(b)
+				}
+			}
+			(None, None) => None,
+		}
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		let a = (range.start_bound(), range.end_bound());
@@ -283,21 +290,21 @@ where
 		let a = self.a.range(a)?;
 		let b = self.b.range(b)?;
 		let mut map = HashMap::new();
-    let mut err = Vec::new();
+		let mut err = Vec::new();
 		a.for_each(|r| match r {
-      Ok((k, v)) => {
-        let e = map.entry(k).or_insert((None, None));
-        e.0 = Some(v);
-      },
-      Err(e) => err.push(Err(e)),
-    });
+			Ok((k, v)) => {
+				let e = map.entry(k).or_insert((None, None));
+				e.0 = Some(v);
+			}
+			Err(e) => err.push(Err(e)),
+		});
 		b.for_each(|r| match r {
-      Ok((k, v)) => {
-        let e = map.entry(k).or_insert((None, None));
-        e.1 = Some(v);
-      },
-      Err(e) => err.push(Err(e)),
-    });
+			Ok((k, v)) => {
+				let e = map.entry(k).or_insert((None, None));
+				e.1 = Some(v);
+			}
+			Err(e) => err.push(Err(e)),
+		});
 		Ok(Box::new(err.into_iter().chain(map.into_iter().map(Ok))))
 	}
 }

@@ -3,11 +3,11 @@
 //! It is built around [sled].
 //!
 //! Take a look at the README to get started.
-//! 
+//!
 //! Take a look at [ops] for a list of available operations.
-//! 
+//!
 //! There are examples in the individual operations.
-//! 
+//!
 //! Take a look at [traits] for a list of available traits.
 
 use anyhow::Result;
@@ -27,7 +27,9 @@ pub mod wrappers;
 pub use {
 	ops::Operate,
 	structs::{material::Material, single::Single},
-	traits::{change::Change, load::Load, store::Store, view::View, watch::Watch, auto_inc::AutoInc},
+	traits::{
+		auto_inc::AutoInc, change::Change, load::Load, store::Store, view::View, watch::Watch,
+	},
 	wrappers::{batch::Batch, tree::Tree},
 };
 

@@ -11,9 +11,13 @@ pub struct Batch<K, V> {
 }
 
 impl<K, V> Default for Batch<K, V> {
-  fn default() -> Self {
-    Self { inner: Default::default(), k: PhantomData, v: PhantomData }
-  }
+	fn default() -> Self {
+		Self {
+			inner: Default::default(),
+			k: PhantomData,
+			v: PhantomData,
+		}
+	}
 }
 
 impl<K, V> Batch<K, V>

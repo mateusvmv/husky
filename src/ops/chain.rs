@@ -1,11 +1,7 @@
 use anyhow::Result;
 use bus::{Bus, BusReader};
-use std::{
-	cmp::Ordering,
-	hash::Hash,
-	sync::Arc,
-};
 use parking_lot::RwLock;
+use std::{cmp::Ordering, hash::Hash, sync::Arc};
 
 use crate::{
 	macros::cloned,
@@ -217,13 +213,25 @@ where
 	}
 	fn is_empty(&self) -> Option<bool> {
 		let a = self.a.is_empty();
-    let b = self.b.is_empty();
-    match (a, b) {
-      (Some(a), Some(b)) => Some(a && b),
-      (Some(a), None) => if a { None } else { Some(a) },
-      (None, Some(b)) => if b { None } else { Some(b) },
-      (None, None) => None,
-    }
+		let b = self.b.is_empty();
+		match (a, b) {
+			(Some(a), Some(b)) => Some(a && b),
+			(Some(a), None) => {
+				if a {
+					None
+				} else {
+					Some(a)
+				}
+			}
+			(None, Some(b)) => {
+				if b {
+					None
+				} else {
+					Some(b)
+				}
+			}
+			(None, None) => None,
+		}
 	}
 	fn range(&self, range: impl std::ops::RangeBounds<Self::Key>) -> Result<Self::Iter> {
 		let a = (range.start_bound(), range.end_bound());
