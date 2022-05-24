@@ -22,3 +22,4 @@ bit-vec = "0.6.3"
 [features]
 default = ["rkyv", "bytecheck"]
 serde = ["dep:serde", "bincode"]
+compression = ["sled/compression"]
