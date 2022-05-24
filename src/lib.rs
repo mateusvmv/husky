@@ -30,6 +30,7 @@ pub use {
 	traits::{
 		auto_inc::AutoInc, change::Change, load::Load, store::Store, view::View, watch::Watch,
 	},
+  threads::wait_all,
 	wrappers::{batch::Batch, tree::Tree},
 };
 

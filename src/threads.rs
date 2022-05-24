@@ -1,4 +1,5 @@
 use parking_lot::{Mutex, RwLock};
+use once_cell::sync::Lazy;
 use std::{
 	sync::{
 		atomic::{AtomicU32, Ordering::Relaxed},
@@ -69,6 +70,8 @@ pub fn spawn_watcher<K, V, E, F>(
 	});
 }
 
+static SYNCS: Lazy<Mutex<Vec<Arc<Synchronizer>>>> = Lazy::new(|| Mutex::default());
+
 #[derive(Default, Debug)]
 pub struct Synchronizer {
 	source: RwLock<Vec<Arc<Synchronizer>>>,
@@ -77,9 +80,19 @@ pub struct Synchronizer {
 	waiting: Mutex<Vec<Thread>>,
 }
 
+/// Waits for all synchronizers to finish propagating.
+pub fn wait_all() {
+  let syncs = SYNCS.lock();
+  for sync in syncs.iter() {
+    sync.wait();
+  }
+}
+
 impl Synchronizer {
-	pub fn new() -> Self {
-		Self::default()
+	pub fn new() -> Arc<Self> {
+		let s = Arc::default();
+    SYNCS.lock().push(Arc::clone(&s));
+    s
 	}
 	pub fn from(source: Vec<Arc<Synchronizer>>) -> Self {
 		let received = source.iter().map(|s| s.outgoing.load(Relaxed)).sum();

@@ -62,7 +62,7 @@ where
 		self.db.clone()
 	}
 	pub(crate) fn new(db: Db, inner: sled::Tree) -> Self {
-		let sync = Arc::new(Synchronizer::new());
+		let sync = Synchronizer::new();
 		let watcher = Watcher::new(move || Arc::new(RwLock::new(Bus::new(128))));
 		let watcher = Arc::new(watcher);
 		Tree {
