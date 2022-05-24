@@ -115,6 +115,13 @@ where
 			None => self.from.remove_owned(key),
 		}
 	}
+  fn fetch_and_update(
+    &self,
+    key: &Self::Key,
+    mut f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
+  ) -> Result<Option<Self::Value>> {
+    self.from.fetch_and_update(key, |v| f(v).and_then(|v| (self.inserter)(v)))
+  }
   #[rustfmt::skip]
 	delegate! {
     to self.from {

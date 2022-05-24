@@ -211,6 +211,11 @@ where
       fn remove_owned(&self, key: <Self as Change>::Key) -> Result<Option<<Self as Change>::Value>>;
       fn remove_ref(&self, key: &<Self as Change>::Key) -> Result<Option<<Self as Change>::Value>>;
       fn clear(&self) -> Result<()>;
+      fn fetch_and_update(
+        &self,
+        key: &Self::Key,
+        mut f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
+      ) -> Result<Option<Self::Value>>;
 	  }
 	}
 }

@@ -119,7 +119,7 @@ where
 	where
 		Self: View + Change,
 		ReduceFn: 'static
-			+ Fn(Option<<Self as View>::Value>, Merge) -> Option<<Self as Change>::Insert>
+			+ Fn(Option<<Self as Change>::Value>, Merge) -> Option<<Self as Change>::Insert>
 			+ Sync
 			+ Send,
 	{
@@ -130,7 +130,7 @@ where
 	where
 		Self: View + Change,
 		ReduceFn: 'static
-			+ Fn(Option<<Self as View>::Value>, Merge) -> <Self as Change>::Insert
+			+ Fn(Option<<Self as Change>::Value>, Merge) -> <Self as Change>::Insert
 			+ Sync
 			+ Send,
 	{

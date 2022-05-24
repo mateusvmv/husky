@@ -13,7 +13,8 @@ use crate::{
 	wrappers::database::Db,
 };
 
-type ReduceFn<P, M> = dyn Fn(Option<<P as View>::Value>, M) -> <P as Change>::Insert + Send + Sync;
+type ReduceFn<P, M> =
+	dyn Fn(Option<<P as Change>::Value>, M) -> <P as Change>::Insert + Send + Sync;
 
 /// A struct that reduces values on insert.
 /// You can create a [Reducer] from a [Change] struct.
@@ -55,8 +56,10 @@ where
 {
 	pub(crate) fn new<ReduceFn>(from: P, reducer: ReduceFn) -> Self
 	where
-		ReduceFn:
-			'static + Fn(Option<<P as View>::Value>, Merge) -> <P as Change>::Insert + Send + Sync,
+		ReduceFn: 'static
+			+ Fn(Option<<P as Change>::Value>, Merge) -> <P as Change>::Insert
+			+ Send
+			+ Sync,
 		P: 'static + Sync + Send,
 	{
 		let reducer = Arc::new(reducer);
@@ -103,14 +106,23 @@ where
 	type Key = <Previous as Change>::Key;
 	type Value = <Previous as Change>::Value;
 	type Insert = Merge;
-	fn insert_owned(
+	fn insert_ref(
 		&self,
-		key: Self::Key,
-		value: Self::Insert,
+		key: &Self::Key,
+		value: &Self::Insert,
 	) -> Result<Option<<Self as Change>::Value>> {
-		let v = self.from.get_ref(&key)?;
-		let v = (self.reducer)(v, value);
-		self.from.insert_owned(key, v)
+		self.from.fetch_and_update(key, |old| {
+			let new = (self.reducer)(old, value.clone());
+			Some(new)
+		})
+	}
+	fn fetch_and_update(
+		&self,
+		key: &Self::Key,
+		mut f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
+	) -> Result<Option<Self::Value>> {
+		self.from
+			.fetch_and_update(key, |v| f(v.clone()).and_then(|m| Some((self.reducer)(v, m))))
 	}
   #[rustfmt::skip]
 	delegate! {

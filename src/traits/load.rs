@@ -121,4 +121,19 @@ where
 		BTreeMap::clear(&mut map);
 		Ok(())
 	}
+	fn fetch_and_update(
+		&self,
+		key: &Self::Key,
+		mut f: impl FnMut(Option<Self::Value>) -> Option<Self::Value>,
+	) -> Result<Option<Self::Value>> {
+		let mut map = self.inner.write();
+		let prev = BTreeMap::get(&mut map, key);
+		let next = f(prev.cloned());
+		drop(prev);
+		if let Some(next) = next {
+			Ok(BTreeMap::insert(&mut map, key.clone(), next))
+		} else {
+			Ok(BTreeMap::remove(&mut map, key))
+		}
+	}
 }

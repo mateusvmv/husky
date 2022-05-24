@@ -95,6 +95,12 @@ where
 	) -> Result<Option<<Self as Change>::Value>> {
 		self.insert_owned(key.into(), value.into())
 	}
+	/// Updates an entry atomically
+	fn fetch_and_update(
+		&self,
+		key: &Self::Key,
+		f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
+	) -> Result<Option<Self::Value>>;
 	/// Gets an [Entry] from a key reference.
 	fn entry_ref<'a>(&'a self, key: &'a <Self as Change>::Key) -> Result<Entry<'a, Self>>
 	where

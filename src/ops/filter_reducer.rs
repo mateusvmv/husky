@@ -14,7 +14,7 @@ use crate::{
 };
 
 type ReduceFn<P, M> =
-	dyn Fn(Option<<P as View>::Value>, M) -> Option<<P as Change>::Insert> + Send + Sync;
+	dyn Fn(Option<<P as Change>::Value>, M) -> Option<<P as Change>::Insert> + Send + Sync;
 
 /// A struct that reduces values on insert.
 /// You can create a [FilterReducer] from a [Change] struct.
@@ -69,7 +69,7 @@ where
 	pub(crate) fn new<ReduceFn>(from: P, reducer: ReduceFn) -> Self
 	where
 		ReduceFn: 'static
-			+ Fn(Option<<P as View>::Value>, Merge) -> Option<<P as Change>::Insert>
+			+ Fn(Option<<P as Change>::Value>, Merge) -> Option<<P as Change>::Insert>
 			+ Send
 			+ Sync,
 		P: 'static + Sync + Send,
@@ -118,17 +118,21 @@ where
 	type Key = <Previous as Change>::Key;
 	type Value = <Previous as Change>::Value;
 	type Insert = Merge;
-	fn insert_owned(
+	fn insert_ref(
 		&self,
-		key: Self::Key,
-		value: Self::Insert,
+		key: &Self::Key,
+		value: &Self::Insert,
 	) -> Result<Option<<Self as Change>::Value>> {
-		let v = self.from.get_ref(&key)?;
-		let v = (self.reducer)(v, value);
-		match v {
-			Some(v) => self.from.insert_owned(key, v),
-			None => self.from.remove_owned(key),
-		}
+		self.from
+			.fetch_and_update(key, |v| (self.reducer)(v, value.clone()))
+	}
+	fn fetch_and_update(
+		&self,
+		key: &Self::Key,
+		mut f: impl FnMut(Option<Self::Value>) -> Option<Self::Insert>,
+	) -> Result<Option<Self::Value>> {
+		self.from
+			.fetch_and_update(key, |v| f(v.clone()).and_then(|m| (self.reducer)(v, m)))
 	}
   #[rustfmt::skip]
 	delegate! {

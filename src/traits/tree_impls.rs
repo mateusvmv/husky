@@ -78,6 +78,11 @@ where
 	  to self {
       fn insert_owned(&self, key: Self::Key, value: Self::Insert) -> Result<Option<<Self as Change>::Value>>;
       fn remove_owned(&self, key: <Self as Change>::Key) -> Result<Option<<Self as Change>::Value>>;
+      fn fetch_and_update(
+        &self,
+        key: &Self::Key,
+        f: impl FnMut(Option<Self::Value>) -> Option<Self::Value>,
+      ) -> Result<Option<Self::Value>>;
 	  }
 	}
 }
