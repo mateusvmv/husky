@@ -34,6 +34,7 @@ pub use {
 };
 
 pub use database::Db;
+pub use sled::Config;
 use wrappers::*;
 
 /// Opens a database at the given path
